@@ -27,7 +27,15 @@ enum ARCHITEXTURES {
     AMD,
 };
 
-// Platform detection
+enum CXX_VERSIONS {
+    UNKNOWN_CXX_VERSION,
+    CXX_17,
+    CXX_20,
+    CXX_23,
+    CXX_26,
+};
+
+// Platform Detection
 #if defined(_WIN32)
 static constexpr const PLATFORMS CURRENT_PLATFORM = PLATFORMS::WINDOWS;
 static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTURES::BIT32;
@@ -49,4 +57,20 @@ static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTUR
 #elif defined(__EMSCRIPTEN__) || defined(WASM) || defined(WEBASSEMBLY)
 static constexpr const PLATFORMS CURRENT_PLATFORM = PLATFORMS::WEB;
 static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTURES::UNKNOWN_ARCHITEXTURE;
+#endif
+
+// C++ Version Detection
+// A new principle lies here: Use 'CXX' macro for macros, and use 'CXX_VERSION' variable for everything else.
+#if defined(CXX)
+    #if CXX == 17
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_17;
+    #elif CXX == 20
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_20;
+    #elif CXX == 23
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_23;
+    #elif CXX == 26
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_26;
+    #endif
+#else
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::UNKNOWN_CXX_VERSION;
 #endif
