@@ -33,3 +33,8 @@ enum TYPES {
     VECTOR4,
     VECTOR4I,
 };
+
+static constexpr const unsigned char U8_MAX = 255;
+static constexpr const unsigned short U16_MAX = 65535;
+static constexpr const unsigned int U32_MAX = 4294967295;
+static constexpr const unsigned long long U64_MAX = 18446744073709551615; // Warning treated as intentional.
