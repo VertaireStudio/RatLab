@@ -8,6 +8,9 @@
 
 #pragma once
 
+// Implementation is inspired by Godot Engine's 'typedefs.h' file:
+// https://github.com/godotengine/godot/blob/master/core/typedefs.h
+
 // Always inlines a function, regardless of compiling configurations.
 #ifndef always_inline
     #if defined(__GNUC__)
