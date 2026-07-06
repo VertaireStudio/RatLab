@@ -10,6 +10,7 @@
 
 /*All basic types which can be used in Variant, as well as any other scripts as a replacement for platform specific types.*/
 /*Also used for type identification.*/
+#include <limits>
 enum TYPES {
     ARRAY,
     BOOL,
@@ -49,3 +50,8 @@ static constexpr const int I32_MIN = -2147483648;
 static constexpr const int I32_MAX = 2147483647;
 static constexpr const long long I64_MIN = -9223372036854775808;
 static constexpr const long long I64_MAX = 9223372036854775807;
+
+static constexpr const float FLOAT_MIN = std::numeric_limits<float>::min();
+static constexpr const float FLOAT_MAX = std::numeric_limits<float>::max();
+static constexpr const double DOUBLE_MIN = std::numeric_limits<double>::min();
+static constexpr const double DOUBLE_MAX = std::numeric_limits<double>::max();
