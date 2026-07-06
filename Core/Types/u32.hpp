@@ -11,6 +11,19 @@
 #include "../Essentials/type_configs.hpp"
 #include "../Essentials/def_configs.hpp"
 
+// Empty structs, used for conversion in 'type_conversion.cpp'
+
+struct Bool;
+struct u8;
+struct u16;
+struct u64;
+struct i8;
+struct i16;
+struct i32;
+struct i64;
+struct f32;
+struct f64;
+
 
 struct u32 {
     // Data
@@ -24,8 +37,8 @@ struct u32 {
     func u32(T p_value) : value((unsigned int)p_value) {}
 
     // Getsets
-    virtual func unsigned int get() const { return value; }
-    virtual func void set(unsigned int p_value) { value = p_value; }
+    func unsigned int get() const { return value; }
+    func void set(unsigned int p_value) { value = p_value; }
 
     // Operators
     func u32 operator+(u32 p_value) const { return u32(value + p_value.get()); }
@@ -54,4 +67,17 @@ struct u32 {
     func u32 min(u32 p_value) { return value < p_value.value ? value : p_value.value; }
     func u32 max(u32 p_value) { return value > p_value.value ? value : p_value.value; }
     func u32 clamp(u32 p_left, u32 p_right) { return min(p_right).max(p_left); }
+
+    // Converters
+
+    func operator Bool();
+    func operator u8();
+    func operator u16();
+    func operator u64();
+    func operator i8();
+    func operator i16();
+    func operator i32();
+    func operator i64();
+    func operator f32();
+    func operator f64();
 };
