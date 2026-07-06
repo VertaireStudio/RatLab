@@ -61,6 +61,10 @@ static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTUR
 
 // C++ Version Detection
 // A new principle lies here: Use 'CXX' macro for macros, and use 'CXX_VERSION' variable for everything else.
+
+// If you cannot define the CXX macro, then uncomment the following and adjust it's value based on your C++ version:
+// #define CXX 17
+
 #if defined(CXX)
     #if CXX == 17
 static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_17;
