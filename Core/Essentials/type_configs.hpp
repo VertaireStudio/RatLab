@@ -11,6 +11,7 @@
 /*All basic types which can be used in Variant, as well as any other scripts as a replacement for platform specific types.*/
 /*Also used for type identification.*/
 #include <limits>
+
 enum TYPES {
     ARRAY,
     BOOL,
@@ -37,19 +38,19 @@ enum TYPES {
 
 // Warnings are treated as intentional.
 
-static constexpr const unsigned char U8_MAX = 255;
-static constexpr const unsigned short U16_MAX = 65535;
-static constexpr const unsigned int U32_MAX = 4294967295;
-static constexpr const unsigned long long U64_MAX = 18446744073709551615;
+static constexpr const unsigned char U8_MAX = std::numeric_limits<unsigned char>::max();
+static constexpr const unsigned short U16_MAX = std::numeric_limits<unsigned short>::max();
+static constexpr const unsigned int U32_MAX = std::numeric_limits<unsigned int>::max();
+static constexpr const unsigned long long U64_MAX = std::numeric_limits<unsigned long long>::max();
 
-static constexpr const char I8_MIN = -128;
-static constexpr const char I8_MAX = 127;
-static constexpr const short I16_MIN = -32768;
-static constexpr const short I16_MAX = 32767;
-static constexpr const int I32_MIN = -2147483648;
-static constexpr const int I32_MAX = 2147483647;
-static constexpr const long long I64_MIN = -9223372036854775808;
-static constexpr const long long I64_MAX = 9223372036854775807;
+static constexpr const char I8_MIN = std::numeric_limits<char>::min();
+static constexpr const char I8_MAX = std::numeric_limits<char>::max();
+static constexpr const short I16_MIN = std::numeric_limits<short>::min();
+static constexpr const short I16_MAX = std::numeric_limits<short>::max();
+static constexpr const int I32_MIN = std::numeric_limits<int>::min();
+static constexpr const int I32_MAX = std::numeric_limits<int>::max();
+static constexpr const long long I64_MIN = std::numeric_limits<long long>::min();
+static constexpr const long long I64_MAX = std::numeric_limits<long long>::max();
 
 static constexpr const float FLOAT_MIN = std::numeric_limits<float>::min();
 static constexpr const float FLOAT_MAX = std::numeric_limits<float>::max();
