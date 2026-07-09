@@ -27,7 +27,7 @@ struct f32;
 struct f64;
 
 
-struct [[nodiscard]] Bool {
+struct Bool {
     static const Bool TRUE;
     static const Bool FALSE;
 
@@ -50,10 +50,26 @@ struct [[nodiscard]] Bool {
     func void operator+=(Bool p_value) { if (!value && p_value.value) { value = p_value.value; } }
     func Bool operator-(Bool p_value) const { return value && p_value.value ? FALSE : TRUE; }
     func void operator-=(Bool p_value) { if (p_value.value) { value = false; } }
+    func Bool operator*(Bool p_value) const { return value && p_value.value ? TRUE : FALSE; }
+    func void operator*=(Bool p_value) { if (value && !p_value.value) { value = p_value.value; } }
+    func Bool operator/(Bool p_value) const { return value; } // 1/1 = 1, 0/1 = 0, 0/0 = undefined, 1/0 = undefined, treat undefined as "unchanged"
+    func void operator/=(Bool p_value) const { return; } // No calculations could be performed that would change the input as output - the input is already the output.
     func Bool operator&&(Bool p_value) const { return value && p_value.value; }
     func Bool operator||(Bool p_value) const { return value || p_value.value; }
 
     func Bool operator!() { return Bool(!value); }
+    func void operator=(Bool p_value) { value = p_value.value; }
+
+    func bool operator==(Bool p_value) const { return value == p_value.value; }
+    func bool operator!=(Bool p_value) const { return value != p_value.value; }
+    func bool operator>(Bool p_value) const { return value > p_value.value; }
+    func bool operator>=(Bool p_value) const { return value >= p_value.value; }
+    func bool operator<(Bool p_value) const { return value < p_value.value; }
+    func bool operator<=(Bool p_value) const { return value <= p_value.value; }
+
+    func void operator++() { value ? value = false : value = true; }
+    func void operator--() { value ? value = false : value = true; }
+
 
     // Helper Functions
     func TYPES get_type() { return TYPES::BOOL; }

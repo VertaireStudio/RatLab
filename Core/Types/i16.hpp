@@ -52,13 +52,14 @@ struct i16 {
 
     func void operator=(i16 p_value) { value = p_value.value; }
     func bool operator==(i16 p_value) { return value == p_value.value; }
+    func bool operator!=(i16 p_value) { return value != p_value.value; }
     func bool operator<(i16 p_value) { return value < p_value.value; }
     func bool operator<=(i16 p_value) { return value <= p_value.value; }
     func bool operator>(i16 p_value) { return value > p_value.value; }
     func bool operator>=(i16 p_value) { return value >= p_value.value; }
 
-    func void operator--() { value == 0 ? (value = I16_MAX) : value -= 1; }
-    func void operator++() { value == I16_MAX ? (value = 0) : value += 1; }
+    func void operator--() { value == 0 ? value = I16_MAX : value -= 1; }
+    func void operator++() { value == I16_MAX ? value = 0 : value += 1; }
 
     // Helper Functions
     func TYPES get_type() { return TYPES::I16; }

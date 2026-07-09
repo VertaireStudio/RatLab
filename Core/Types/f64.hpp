@@ -55,6 +55,7 @@ struct f64 {
 
     func void operator=(f64 p_value) { value = p_value.value; }
     func bool operator==(f64 p_value) { return value == p_value.value; }
+    func bool operator!=(f64 p_value) { return value != p_value.value; }
     func bool operator<(f64 p_value) { return value < p_value.value; }
     func bool operator<=(f64 p_value) { return value <= p_value.value; }
     func bool operator>(f64 p_value) { return value > p_value.value; }

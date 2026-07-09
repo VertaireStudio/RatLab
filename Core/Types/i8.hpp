@@ -52,6 +52,7 @@ struct i8 {
 
     func void operator=(i8 p_value) { value = p_value.value; }
     func bool operator==(i8 p_value) { return value == p_value.value; }
+    func bool operator!=(i8 p_value) { return value != p_value.value; }
     func bool operator<(i8 p_value) { return value < p_value.value; }
     func bool operator<=(i8 p_value) { return value <= p_value.value; }
     func bool operator>(i8 p_value) { return value > p_value.value; }

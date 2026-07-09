@@ -52,6 +52,7 @@ struct u64 {
 
     func void operator=(u64 p_value) { value = p_value.value; }
     func bool operator==(u64 p_value) { return value == p_value.value; }
+    func bool operator!=(u64 p_value) { return value != p_value.value; }
     func bool operator<(u64 p_value) { return value < p_value.value; }
     func bool operator<=(u64 p_value) { return value <= p_value.value; }
     func bool operator>(u64 p_value) { return value > p_value.value; }

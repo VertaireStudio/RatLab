@@ -52,6 +52,7 @@ struct u32 {
 
     func void operator=(u32 p_value) { value = p_value.value; }
     func bool operator==(u32 p_value) { return value == p_value.value; }
+    func bool operator!=(u32 p_value) { return value != p_value.value; }
     func bool operator<(u32 p_value) { return value < p_value.value; }
     func bool operator<=(u32 p_value) { return value <= p_value.value; }
     func bool operator>(u32 p_value) { return value > p_value.value; }
