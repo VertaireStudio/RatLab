@@ -8,6 +8,7 @@
 
 #include "variant.hpp"
 
+// TODO: Make conversion for Variant types
 
 // Conversions between types
 
