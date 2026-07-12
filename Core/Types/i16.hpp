@@ -26,6 +26,8 @@ struct f64;
 
 
 struct i16 {
+    static const i16 ZERO;
+
     // Data
     unsigned short value;
 
@@ -60,6 +62,7 @@ struct i16 {
 
     func void operator--() { value == 0 ? value = I16_MAX : value -= 1; }
     func void operator++() { value == I16_MAX ? value = 0 : value += 1; }
+    func i16 operator!() { return i16(!value); }
 
     // Helper Functions
     func TYPES get_type() { return TYPES::I16; }
@@ -83,3 +86,5 @@ struct i16 {
     func operator f32();
     func operator f64();
 };
+
+inline const func i16 i16::ZERO = {0};

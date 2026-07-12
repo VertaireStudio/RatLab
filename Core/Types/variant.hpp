@@ -24,8 +24,8 @@
 #include "u64.hpp"
 #include "vector.hpp"
 
-
 struct Variant {
+    private:
     // Data
     Bool value_bool;
     u8 value_u8;
@@ -42,6 +42,7 @@ struct Variant {
     TYPES current_type;
     bool no_type_specified = false;
 
+    public:
     // Constructor
     // Default: f32 type
 
@@ -71,11 +72,17 @@ struct Variant {
     func Variant(float p_value)                 : value_f32(f32(p_value)), current_type(TYPES::F32) {}
     func Variant(double p_value)                : value_f64(f64(p_value)), current_type(TYPES::F64) {}
 
+    // Helper Functions
+
+    func TYPES get_current_type() const { return current_type; }
+    func void set_current_type(TYPES p_type) { current_type = p_type; }
+    func bool is_unknown_type() const { return no_type_specified; }
+
     // Getsets
 
     template<typename T>
-    func T get_value() const {
-        switch (current_type) {
+    func T get_current_value() const {
+        switch (get_current_type()) {
             case TYPES::BOOL: { return value_bool; }
             case TYPES::U8: { return value_u8; }
             case TYPES::U16: { return value_u16; }
@@ -92,24 +99,12 @@ struct Variant {
         return value_f32; // default value return
     }
 
+    template<typename T>
+    func bool is_same_as_current_value(T p_value) const { return current_type == p_value.get_type(); }
+    func bool is_variant_same_as_current_value(Variant p_value) const { return get_current_type() == p_value.get_current_type(); }
 
-    func void set(Bool p_value) { current_type == p_value.get_type() ? value_bool = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(u8 p_value) { current_type == p_value.get_type() ? value_u8 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(u16 p_value) { current_type == p_value.get_type() ? value_u16 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(u32 p_value) { current_type == p_value.get_type() ? value_u32 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(u64 p_value) { current_type == p_value.get_type() ? value_u64 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(i8 p_value) { current_type == p_value.get_type() ? value_i8 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(i16 p_value) { current_type == p_value.get_type() ? value_i16 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(i32 p_value) { current_type == p_value.get_type() ? value_i32 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(i64 p_value) { current_type == p_value.get_type() ? value_i64 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(f32 p_value) { current_type == p_value.get_type() ? value_f32 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-    func void set(f64 p_value) { current_type == p_value.get_type() ? value_f64 = p_value : get_value<typeof(p_value)>() = (typeof(p_value))p_value; }
-
-    // Helper Functions
-
-    func TYPES get_current_type() const { return current_type; }
-    func void set_current_type(TYPES p_type) { current_type = p_type; }
-    func bool is_unknown_type() const { return no_type_specified; }
+    template<typename T>
+    func void set(T p_value) { get_current_value<typeof(p_value)>() = p_value; }
 
     // Conversions
 
@@ -126,238 +121,237 @@ struct Variant {
     func operator f64() const { return value_f64; }
 
     // Operators (only between Variant types with the same current value)
-
     func Variant operator+(Variant p_value) const {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? Variant(value_bool + p_value.value_bool) : *this; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? Variant(value_u8 + p_value.value_u8) : *this; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? Variant(value_u16 + p_value.value_u16) : *this; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? Variant(value_u32 + p_value.value_u32) : *this; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? Variant(value_u64 + p_value.value_u64) : *this; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? Variant(value_i8 + p_value.value_i8) : *this; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? Variant(value_i16 + p_value.value_i16) : *this; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? Variant(value_i32 + p_value.value_i32) : *this; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? Variant(value_i64 + p_value.value_i64) : *this; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? Variant(value_f32 + p_value.value_f32) : *this; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? Variant(value_f64 + p_value.value_f64) : *this; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? Variant(value_bool + p_value.value_bool) : *this; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? Variant(value_u8 + p_value.value_u8) : *this; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? Variant(value_u16 + p_value.value_u16) : *this; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? Variant(value_u32 + p_value.value_u32) : *this; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? Variant(value_u64 + p_value.value_u64) : *this; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? Variant(value_i8 + p_value.value_i8) : *this; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? Variant(value_i16 + p_value.value_i16) : *this; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? Variant(value_i32 + p_value.value_i32) : *this; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? Variant(value_i64 + p_value.value_i64) : *this; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? Variant(value_f32 + p_value.value_f32) : *this; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? Variant(value_f64 + p_value.value_f64) : *this; }
         }
         
         return Variant(value_f32 + p_value.value_f32); // Default value return
     }
     func void operator+=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { if (get_current_type() == p_value.get_current_type())  { value_bool += p_value.value_bool; } return; }
-            case TYPES::U8: { if (get_current_type() == p_value.get_current_type())  { value_u8 += p_value.value_u8; } return; }
-            case TYPES::U16: { if (get_current_type() == p_value.get_current_type())  { value_u16 += p_value.value_u16; } return; }
-            case TYPES::U32: { if (get_current_type() == p_value.get_current_type())  { value_u32 += p_value.value_u32; } return; }
-            case TYPES::U64: { if (get_current_type() == p_value.get_current_type())  { value_u64 += p_value.value_u64; } return; }
-            case TYPES::I8: { if (get_current_type() == p_value.get_current_type())  { value_i8 += p_value.value_i8; } return; }
-            case TYPES::I16: { if (get_current_type() == p_value.get_current_type())  { value_i16 += p_value.value_i16; } return; }
-            case TYPES::I32: { if (get_current_type() == p_value.get_current_type())  { value_i32 += p_value.value_i32; } return; }
-            case TYPES::I64: { if (get_current_type() == p_value.get_current_type())  { value_i64 += p_value.value_i64; } return; }
-            case TYPES::F32: { if (get_current_type() == p_value.get_current_type())  { value_f32 += p_value.value_f32; } return; }
-            case TYPES::F64: { if (get_current_type() == p_value.get_current_type())  { value_f64 += p_value.value_f64; } return; }
+            case TYPES::BOOL: { if (is_variant_same_as_current_value(p_value))  { value_bool += p_value.value_bool; } return; }
+            case TYPES::U8: { if (is_variant_same_as_current_value(p_value))  { value_u8 += p_value.value_u8; } return; }
+            case TYPES::U16: { if (is_variant_same_as_current_value(p_value))  { value_u16 += p_value.value_u16; } return; }
+            case TYPES::U32: { if (is_variant_same_as_current_value(p_value))  { value_u32 += p_value.value_u32; } return; }
+            case TYPES::U64: { if (is_variant_same_as_current_value(p_value))  { value_u64 += p_value.value_u64; } return; }
+            case TYPES::I8: { if (is_variant_same_as_current_value(p_value))  { value_i8 += p_value.value_i8; } return; }
+            case TYPES::I16: { if (is_variant_same_as_current_value(p_value))  { value_i16 += p_value.value_i16; } return; }
+            case TYPES::I32: { if (is_variant_same_as_current_value(p_value))  { value_i32 += p_value.value_i32; } return; }
+            case TYPES::I64: { if (is_variant_same_as_current_value(p_value))  { value_i64 += p_value.value_i64; } return; }
+            case TYPES::F32: { if (is_variant_same_as_current_value(p_value))  { value_f32 += p_value.value_f32; } return; }
+            case TYPES::F64: { if (is_variant_same_as_current_value(p_value))  { value_f64 += p_value.value_f64; } return; }
         }
     }
     func Variant operator-(Variant p_value) const {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? Variant(value_bool - p_value.value_bool) : *this; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? Variant(value_u8 - p_value.value_u8) : *this; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? Variant(value_u16 - p_value.value_u16) : *this; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? Variant(value_u32 - p_value.value_u32) : *this; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? Variant(value_u64 - p_value.value_u64) : *this; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? Variant(value_i8 - p_value.value_i8) : *this; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? Variant(value_i16 - p_value.value_i16) : *this; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? Variant(value_i32 - p_value.value_i32) : *this; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? Variant(value_i64 - p_value.value_i64) : *this; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? Variant(value_f32 - p_value.value_f32) : *this; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? Variant(value_f64 - p_value.value_f64) : *this; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? Variant(value_bool - p_value.value_bool) : *this; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? Variant(value_u8 - p_value.value_u8) : *this; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? Variant(value_u16 - p_value.value_u16) : *this; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? Variant(value_u32 - p_value.value_u32) : *this; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? Variant(value_u64 - p_value.value_u64) : *this; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? Variant(value_i8 - p_value.value_i8) : *this; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? Variant(value_i16 - p_value.value_i16) : *this; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? Variant(value_i32 - p_value.value_i32) : *this; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? Variant(value_i64 - p_value.value_i64) : *this; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? Variant(value_f32 - p_value.value_f32) : *this; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? Variant(value_f64 - p_value.value_f64) : *this; }
         }
         
         return Variant(value_f32 - p_value.value_f32); // Default value return
     }
     func void operator-=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { if (get_current_type() == p_value.get_current_type())  { value_bool -= p_value.value_bool; } return; }
-            case TYPES::U8: { if (get_current_type() == p_value.get_current_type())  { value_u8 -= p_value.value_u8; } return; }
-            case TYPES::U16: { if (get_current_type() == p_value.get_current_type())  { value_u16 -= p_value.value_u16; } return; }
-            case TYPES::U32: { if (get_current_type() == p_value.get_current_type())  { value_u32 -= p_value.value_u32; } return; }
-            case TYPES::U64: { if (get_current_type() == p_value.get_current_type())  { value_u64 -= p_value.value_u64; } return; }
-            case TYPES::I8: { if (get_current_type() == p_value.get_current_type())  { value_i8 -= p_value.value_i8; } return; }
-            case TYPES::I16: { if (get_current_type() == p_value.get_current_type())  { value_i16 -= p_value.value_i16; } return; }
-            case TYPES::I32: { if (get_current_type() == p_value.get_current_type())  { value_i32 -= p_value.value_i32; } return; }
-            case TYPES::I64: { if (get_current_type() == p_value.get_current_type())  { value_i64 -= p_value.value_i64; } return; }
-            case TYPES::F32: { if (get_current_type() == p_value.get_current_type())  { value_f32 -= p_value.value_f32; } return; }
-            case TYPES::F64: { if (get_current_type() == p_value.get_current_type())  { value_f64 -= p_value.value_f64; } return; }
+            case TYPES::BOOL: { if (is_variant_same_as_current_value(p_value))  { value_bool -= p_value.value_bool; } return; }
+            case TYPES::U8: { if (is_variant_same_as_current_value(p_value))  { value_u8 -= p_value.value_u8; } return; }
+            case TYPES::U16: { if (is_variant_same_as_current_value(p_value))  { value_u16 -= p_value.value_u16; } return; }
+            case TYPES::U32: { if (is_variant_same_as_current_value(p_value))  { value_u32 -= p_value.value_u32; } return; }
+            case TYPES::U64: { if (is_variant_same_as_current_value(p_value))  { value_u64 -= p_value.value_u64; } return; }
+            case TYPES::I8: { if (is_variant_same_as_current_value(p_value))  { value_i8 -= p_value.value_i8; } return; }
+            case TYPES::I16: { if (is_variant_same_as_current_value(p_value))  { value_i16 -= p_value.value_i16; } return; }
+            case TYPES::I32: { if (is_variant_same_as_current_value(p_value))  { value_i32 -= p_value.value_i32; } return; }
+            case TYPES::I64: { if (is_variant_same_as_current_value(p_value))  { value_i64 -= p_value.value_i64; } return; }
+            case TYPES::F32: { if (is_variant_same_as_current_value(p_value))  { value_f32 -= p_value.value_f32; } return; }
+            case TYPES::F64: { if (is_variant_same_as_current_value(p_value))  { value_f64 -= p_value.value_f64; } return; }
         }
     }
     func Variant operator*(Variant p_value) const {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? Variant(value_bool - p_value.value_bool) : *this; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? Variant(value_u8 - p_value.value_u8) : *this; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? Variant(value_u16 - p_value.value_u16) : *this; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? Variant(value_u32 - p_value.value_u32) : *this; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? Variant(value_u64 - p_value.value_u64) : *this; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? Variant(value_i8 - p_value.value_i8) : *this; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? Variant(value_i16 - p_value.value_i16) : *this; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? Variant(value_i32 - p_value.value_i32) : *this; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? Variant(value_i64 - p_value.value_i64) : *this; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? Variant(value_f32 - p_value.value_f32) : *this; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? Variant(value_f64 - p_value.value_f64) : *this; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? Variant(value_bool - p_value.value_bool) : *this; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? Variant(value_u8 - p_value.value_u8) : *this; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? Variant(value_u16 - p_value.value_u16) : *this; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? Variant(value_u32 - p_value.value_u32) : *this; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? Variant(value_u64 - p_value.value_u64) : *this; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? Variant(value_i8 - p_value.value_i8) : *this; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? Variant(value_i16 - p_value.value_i16) : *this; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? Variant(value_i32 - p_value.value_i32) : *this; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? Variant(value_i64 - p_value.value_i64) : *this; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? Variant(value_f32 - p_value.value_f32) : *this; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? Variant(value_f64 - p_value.value_f64) : *this; }
         }
         
         return Variant(value_f32 - p_value.value_f32); // Default value return
     }
     func void operator*=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { if (get_current_type() == p_value.get_current_type())  { value_bool *= p_value.value_bool; } return; }
-            case TYPES::U8: { if (get_current_type() == p_value.get_current_type())  { value_u8 *= p_value.value_u8; } return; }
-            case TYPES::U16: { if (get_current_type() == p_value.get_current_type())  { value_u16 *= p_value.value_u16; } return; }
-            case TYPES::U32: { if (get_current_type() == p_value.get_current_type())  { value_u32 *= p_value.value_u32; } return; }
-            case TYPES::U64: { if (get_current_type() == p_value.get_current_type())  { value_u64 *= p_value.value_u64; } return; }
-            case TYPES::I8: { if (get_current_type() == p_value.get_current_type())  { value_i8 *= p_value.value_i8; } return; }
-            case TYPES::I16: { if (get_current_type() == p_value.get_current_type())  { value_i16 *= p_value.value_i16; } return; }
-            case TYPES::I32: { if (get_current_type() == p_value.get_current_type())  { value_i32 *= p_value.value_i32; } return; }
-            case TYPES::I64: { if (get_current_type() == p_value.get_current_type())  { value_i64 *= p_value.value_i64; } return; }
-            case TYPES::F32: { if (get_current_type() == p_value.get_current_type())  { value_f32 *= p_value.value_f32; } return; }
-            case TYPES::F64: { if (get_current_type() == p_value.get_current_type())  { value_f64 *= p_value.value_f64; } return; }
+            case TYPES::BOOL: { if (is_variant_same_as_current_value(p_value))  { value_bool *= p_value.value_bool; } return; }
+            case TYPES::U8: { if (is_variant_same_as_current_value(p_value))  { value_u8 *= p_value.value_u8; } return; }
+            case TYPES::U16: { if (is_variant_same_as_current_value(p_value))  { value_u16 *= p_value.value_u16; } return; }
+            case TYPES::U32: { if (is_variant_same_as_current_value(p_value))  { value_u32 *= p_value.value_u32; } return; }
+            case TYPES::U64: { if (is_variant_same_as_current_value(p_value))  { value_u64 *= p_value.value_u64; } return; }
+            case TYPES::I8: { if (is_variant_same_as_current_value(p_value))  { value_i8 *= p_value.value_i8; } return; }
+            case TYPES::I16: { if (is_variant_same_as_current_value(p_value))  { value_i16 *= p_value.value_i16; } return; }
+            case TYPES::I32: { if (is_variant_same_as_current_value(p_value))  { value_i32 *= p_value.value_i32; } return; }
+            case TYPES::I64: { if (is_variant_same_as_current_value(p_value))  { value_i64 *= p_value.value_i64; } return; }
+            case TYPES::F32: { if (is_variant_same_as_current_value(p_value))  { value_f32 *= p_value.value_f32; } return; }
+            case TYPES::F64: { if (is_variant_same_as_current_value(p_value))  { value_f64 *= p_value.value_f64; } return; }
         }
     }
     func Variant operator/(Variant p_value) const {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? Variant(value_bool / p_value.value_bool) : *this; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? Variant(value_u8 / p_value.value_u8) : *this; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? Variant(value_u16 / p_value.value_u16) : *this; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? Variant(value_u32 / p_value.value_u32) : *this; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? Variant(value_u64 / p_value.value_u64) : *this; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? Variant(value_i8 / p_value.value_i8) : *this; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? Variant(value_i16 / p_value.value_i16) : *this; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? Variant(value_i32 / p_value.value_i32) : *this; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? Variant(value_i64 / p_value.value_i64) : *this; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? Variant(value_f32 / p_value.value_f32) : *this; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? Variant(value_f64 / p_value.value_f64) : *this; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? Variant(value_bool / p_value.value_bool) : *this; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? Variant(value_u8 / p_value.value_u8) : *this; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? Variant(value_u16 / p_value.value_u16) : *this; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? Variant(value_u32 / p_value.value_u32) : *this; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? Variant(value_u64 / p_value.value_u64) : *this; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? Variant(value_i8 / p_value.value_i8) : *this; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? Variant(value_i16 / p_value.value_i16) : *this; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? Variant(value_i32 / p_value.value_i32) : *this; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? Variant(value_i64 / p_value.value_i64) : *this; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? Variant(value_f32 / p_value.value_f32) : *this; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? Variant(value_f64 / p_value.value_f64) : *this; }
         }
         
         return Variant(value_f32 - p_value.value_f32); // Default value return
     }
     func void operator/=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { if (get_current_type() == p_value.get_current_type())  { value_bool /= p_value.value_bool; } return; }
-            case TYPES::U8: { if (get_current_type() == p_value.get_current_type())  { value_u8 /= p_value.value_u8; } return; }
-            case TYPES::U16: { if (get_current_type() == p_value.get_current_type())  { value_u16 /= p_value.value_u16; } return; }
-            case TYPES::U32: { if (get_current_type() == p_value.get_current_type())  { value_u32 /= p_value.value_u32; } return; }
-            case TYPES::U64: { if (get_current_type() == p_value.get_current_type())  { value_u64 /= p_value.value_u64; } return; }
-            case TYPES::I8: { if (get_current_type() == p_value.get_current_type())  { value_i8 /= p_value.value_i8; } return; }
-            case TYPES::I16: { if (get_current_type() == p_value.get_current_type())  { value_i16 /= p_value.value_i16; } return; }
-            case TYPES::I32: { if (get_current_type() == p_value.get_current_type())  { value_i32 /= p_value.value_i32; } return; }
-            case TYPES::I64: { if (get_current_type() == p_value.get_current_type())  { value_i64 /= p_value.value_i64; } return; }
-            case TYPES::F32: { if (get_current_type() == p_value.get_current_type())  { value_f32 /= p_value.value_f32; } return; }
-            case TYPES::F64: { if (get_current_type() == p_value.get_current_type())  { value_f64 /= p_value.value_f64; } return; }
+            case TYPES::BOOL: { if (is_variant_same_as_current_value(p_value))  { value_bool /= p_value.value_bool; } return; }
+            case TYPES::U8: { if (is_variant_same_as_current_value(p_value))  { value_u8 /= p_value.value_u8; } return; }
+            case TYPES::U16: { if (is_variant_same_as_current_value(p_value))  { value_u16 /= p_value.value_u16; } return; }
+            case TYPES::U32: { if (is_variant_same_as_current_value(p_value))  { value_u32 /= p_value.value_u32; } return; }
+            case TYPES::U64: { if (is_variant_same_as_current_value(p_value))  { value_u64 /= p_value.value_u64; } return; }
+            case TYPES::I8: { if (is_variant_same_as_current_value(p_value))  { value_i8 /= p_value.value_i8; } return; }
+            case TYPES::I16: { if (is_variant_same_as_current_value(p_value))  { value_i16 /= p_value.value_i16; } return; }
+            case TYPES::I32: { if (is_variant_same_as_current_value(p_value))  { value_i32 /= p_value.value_i32; } return; }
+            case TYPES::I64: { if (is_variant_same_as_current_value(p_value))  { value_i64 /= p_value.value_i64; } return; }
+            case TYPES::F32: { if (is_variant_same_as_current_value(p_value))  { value_f32 /= p_value.value_f32; } return; }
+            case TYPES::F64: { if (is_variant_same_as_current_value(p_value))  { value_f64 /= p_value.value_f64; } return; }
         }
     }
     func void operator=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { if (get_current_type() == p_value.get_current_type())  { value_bool = p_value.value_bool; } return; }
-            case TYPES::U8: { if (get_current_type() == p_value.get_current_type())  { value_u8 = p_value.value_u8; } return; }
-            case TYPES::U16: { if (get_current_type() == p_value.get_current_type())  { value_u16 = p_value.value_u16; } return; }
-            case TYPES::U32: { if (get_current_type() == p_value.get_current_type())  { value_u32 = p_value.value_u32; } return; }
-            case TYPES::U64: { if (get_current_type() == p_value.get_current_type())  { value_u64 = p_value.value_u64; } return; }
-            case TYPES::I8: { if (get_current_type() == p_value.get_current_type())  { value_i8 = p_value.value_i8; } return; }
-            case TYPES::I16: { if (get_current_type() == p_value.get_current_type())  { value_i16 = p_value.value_i16; } return; }
-            case TYPES::I32: { if (get_current_type() == p_value.get_current_type())  { value_i32 = p_value.value_i32; } return; }
-            case TYPES::I64: { if (get_current_type() == p_value.get_current_type())  { value_i64 = p_value.value_i64; } return; }
-            case TYPES::F32: { if (get_current_type() == p_value.get_current_type())  { value_f32 = p_value.value_f32; } return; }
-            case TYPES::F64: { if (get_current_type() == p_value.get_current_type())  { value_f64 = p_value.value_f64; } return; }
+            case TYPES::BOOL: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_bool); } return; }
+            case TYPES::U8: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_u8); } return; }
+            case TYPES::U16: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_u16); } return; }
+            case TYPES::U32: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_u32); } return; }
+            case TYPES::U64: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_u64); } return; }
+            case TYPES::I8: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_i8); } return; }
+            case TYPES::I16: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_i16); } return; }
+            case TYPES::I32: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_i32); } return; }
+            case TYPES::I64: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_i64); } return; }
+            case TYPES::F32: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_f32); } return; }
+            case TYPES::F64: { if (is_variant_same_as_current_value(p_value))  { set(p_value.value_f64); } return; }
         }
     }
     func bool operator==(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? value_bool == p_value.value_bool : false; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? value_u8 == p_value.value_u8 : false; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? value_u16 == p_value.value_u16 : false; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? value_u32 == p_value.value_u32 : false; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? value_u64 == p_value.value_u64 : false; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? value_i8 == p_value.value_i8 : false; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? value_i16 == p_value.value_i16 : false; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? value_i32 == p_value.value_i32 : false; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? value_i64 == p_value.value_i64 : false; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? value_f32 == p_value.value_f32 : false; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? value_f64 == p_value.value_f64 : false; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? value_bool == p_value.value_bool : false; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? value_u8 == p_value.value_u8 : false; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? value_u16 == p_value.value_u16 : false; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? value_u32 == p_value.value_u32 : false; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? value_u64 == p_value.value_u64 : false; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? value_i8 == p_value.value_i8 : false; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? value_i16 == p_value.value_i16 : false; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? value_i32 == p_value.value_i32 : false; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? value_i64 == p_value.value_i64 : false; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? value_f32 == p_value.value_f32 : false; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? value_f64 == p_value.value_f64 : false; }
         }
     }
     func bool operator!=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? value_bool != p_value.value_bool : false; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? value_u8 != p_value.value_u8 : false; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? value_u16 != p_value.value_u16 : false; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? value_u32 != p_value.value_u32 : false; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? value_u64 != p_value.value_u64 : false; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? value_i8 != p_value.value_i8 : false; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? value_i16 != p_value.value_i16 : false; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? value_i32 != p_value.value_i32 : false; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? value_i64 != p_value.value_i64 : false; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? value_f32 != p_value.value_f32 : false; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? value_f64 != p_value.value_f64 : false; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? value_bool != p_value.value_bool : false; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? value_u8 != p_value.value_u8 : false; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? value_u16 != p_value.value_u16 : false; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? value_u32 != p_value.value_u32 : false; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? value_u64 != p_value.value_u64 : false; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? value_i8 != p_value.value_i8 : false; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? value_i16 != p_value.value_i16 : false; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? value_i32 != p_value.value_i32 : false; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? value_i64 != p_value.value_i64 : false; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? value_f32 != p_value.value_f32 : false; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? value_f64 != p_value.value_f64 : false; }
         }
     }
     func bool operator>(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? value_bool > p_value.value_bool : false; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? value_u8 > p_value.value_u8 : false; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? value_u16 > p_value.value_u16 : false; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? value_u32 > p_value.value_u32 : false; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? value_u64 > p_value.value_u64 : false; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? value_i8 > p_value.value_i8 : false; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? value_i16 > p_value.value_i16 : false; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? value_i32 > p_value.value_i32 : false; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? value_i64 > p_value.value_i64 : false; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? value_f32 > p_value.value_f32 : false; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? value_f64 > p_value.value_f64 : false; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? value_bool > p_value.value_bool : false; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? value_u8 > p_value.value_u8 : false; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? value_u16 > p_value.value_u16 : false; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? value_u32 > p_value.value_u32 : false; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? value_u64 > p_value.value_u64 : false; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? value_i8 > p_value.value_i8 : false; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? value_i16 > p_value.value_i16 : false; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? value_i32 > p_value.value_i32 : false; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? value_i64 > p_value.value_i64 : false; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? value_f32 > p_value.value_f32 : false; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? value_f64 > p_value.value_f64 : false; }
         }
     }
     func bool operator>=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? value_bool >= p_value.value_bool : false; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? value_u8 >= p_value.value_u8 : false; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? value_u16 >= p_value.value_u16 : false; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? value_u32 >= p_value.value_u32 : false; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? value_u64 >= p_value.value_u64 : false; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? value_i8 >= p_value.value_i8 : false; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? value_i16 >= p_value.value_i16 : false; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? value_i32 >= p_value.value_i32 : false; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? value_i64 >= p_value.value_i64 : false; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? value_f32 >= p_value.value_f32 : false; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? value_f64 >= p_value.value_f64 : false; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? value_bool >= p_value.value_bool : false; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? value_u8 >= p_value.value_u8 : false; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? value_u16 >= p_value.value_u16 : false; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? value_u32 >= p_value.value_u32 : false; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? value_u64 >= p_value.value_u64 : false; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? value_i8 >= p_value.value_i8 : false; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? value_i16 >= p_value.value_i16 : false; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? value_i32 >= p_value.value_i32 : false; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? value_i64 >= p_value.value_i64 : false; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? value_f32 >= p_value.value_f32 : false; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? value_f64 >= p_value.value_f64 : false; }
         }
     }
     func bool operator<(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? value_bool < p_value.value_bool : false; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? value_u8 < p_value.value_u8 : false; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? value_u16 < p_value.value_u16 : false; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? value_u32 < p_value.value_u32 : false; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? value_u64 < p_value.value_u64 : false; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? value_i8 < p_value.value_i8 : false; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? value_i16 < p_value.value_i16 : false; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? value_i32 < p_value.value_i32 : false; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? value_i64 < p_value.value_i64 : false; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? value_f32 < p_value.value_f32 : false; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? value_f64 < p_value.value_f64 : false; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? value_bool < p_value.value_bool : false; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? value_u8 < p_value.value_u8 : false; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? value_u16 < p_value.value_u16 : false; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? value_u32 < p_value.value_u32 : false; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? value_u64 < p_value.value_u64 : false; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? value_i8 < p_value.value_i8 : false; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? value_i16 < p_value.value_i16 : false; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? value_i32 < p_value.value_i32 : false; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? value_i64 < p_value.value_i64 : false; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? value_f32 < p_value.value_f32 : false; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? value_f64 < p_value.value_f64 : false; }
         }
     }
     func bool operator<=(Variant p_value) {
         switch (get_current_type()) {
-            case TYPES::BOOL: { return get_current_type() == p_value.get_current_type() ? value_bool <= p_value.value_bool : false; }
-            case TYPES::U8: { return get_current_type() == p_value.get_current_type() ? value_u8 <= p_value.value_u8 : false; }
-            case TYPES::U16: { return get_current_type() == p_value.get_current_type() ? value_u16 <= p_value.value_u16 : false; }
-            case TYPES::U32: { return get_current_type() == p_value.get_current_type() ? value_u32 <= p_value.value_u32 : false; }
-            case TYPES::U64: { return get_current_type() == p_value.get_current_type() ? value_u64 <= p_value.value_u64 : false; }
-            case TYPES::I8: { return get_current_type() == p_value.get_current_type() ? value_i8 <= p_value.value_i8 : false; }
-            case TYPES::I16: { return get_current_type() == p_value.get_current_type() ? value_i16 <= p_value.value_i16 : false; }
-            case TYPES::I32: { return get_current_type() == p_value.get_current_type() ? value_i32 <= p_value.value_i32 : false; }
-            case TYPES::I64: { return get_current_type() == p_value.get_current_type() ? value_i64 <= p_value.value_i64 : false; }
-            case TYPES::F32: { return get_current_type() == p_value.get_current_type() ? value_f32 <= p_value.value_f32 : false; }
-            case TYPES::F64: { return get_current_type() == p_value.get_current_type() ? value_f64 <= p_value.value_f64 : false; }
+            case TYPES::BOOL: { return is_variant_same_as_current_value(p_value) ? value_bool <= p_value.value_bool : false; }
+            case TYPES::U8: { return is_variant_same_as_current_value(p_value) ? value_u8 <= p_value.value_u8 : false; }
+            case TYPES::U16: { return is_variant_same_as_current_value(p_value) ? value_u16 <= p_value.value_u16 : false; }
+            case TYPES::U32: { return is_variant_same_as_current_value(p_value) ? value_u32 <= p_value.value_u32 : false; }
+            case TYPES::U64: { return is_variant_same_as_current_value(p_value) ? value_u64 <= p_value.value_u64 : false; }
+            case TYPES::I8: { return is_variant_same_as_current_value(p_value) ? value_i8 <= p_value.value_i8 : false; }
+            case TYPES::I16: { return is_variant_same_as_current_value(p_value) ? value_i16 <= p_value.value_i16 : false; }
+            case TYPES::I32: { return is_variant_same_as_current_value(p_value) ? value_i32 <= p_value.value_i32 : false; }
+            case TYPES::I64: { return is_variant_same_as_current_value(p_value) ? value_i64 <= p_value.value_i64 : false; }
+            case TYPES::F32: { return is_variant_same_as_current_value(p_value) ? value_f32 <= p_value.value_f32 : false; }
+            case TYPES::F64: { return is_variant_same_as_current_value(p_value) ? value_f64 <= p_value.value_f64 : false; }
         }
     }
     func void operator++() {
@@ -388,6 +382,21 @@ struct Variant {
             case TYPES::I64: { --value_i64; return; }
             case TYPES::F32: { --value_f32; return; }
             case TYPES::F64: { --value_f64; return; }
+        }
+    }
+    func void operator!() {
+        switch (get_current_type()) {
+            case TYPES::BOOL: { !value_bool; return; }
+            case TYPES::U8: { !value_u8; return; }
+            case TYPES::U16: { !value_u16; return; }
+            case TYPES::U32: { !value_u32; return; }
+            case TYPES::U64: { !value_u64; return; }
+            case TYPES::I8: { !value_i8; return; }
+            case TYPES::I16: { !value_i16; return; }
+            case TYPES::I32: { !value_i32; return; }
+            case TYPES::I64: { !value_i64; return; }
+            case TYPES::F32: { !value_f32; return; }
+            case TYPES::F64: { !value_f64; return; }
         }
     }
 

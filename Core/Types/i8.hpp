@@ -26,6 +26,8 @@ struct f64;
 
 
 struct i8 {
+    static const i8 ZERO;
+
     // Data
     unsigned char value;
 
@@ -60,6 +62,7 @@ struct i8 {
 
     func void operator--() { value == 0 ? (value = I8_MAX) : value -= 1; }
     func void operator++() { value == I8_MAX ? (value = 0) : value += 1; }
+    func i8 operator!() { return i8(!value); }
 
     // Helper Functions
     func TYPES get_type() { return TYPES::I8; }
@@ -83,3 +86,5 @@ struct i8 {
     func operator f32();
     func operator f64();
 };
+
+inline const func i8 i8::ZERO = {0};

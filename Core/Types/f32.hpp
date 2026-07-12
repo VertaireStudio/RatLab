@@ -28,6 +28,8 @@ struct f64;
 
 
 struct f32 {
+    static const f32 ZERO;
+
     // Data
     float value;
 
@@ -63,6 +65,7 @@ struct f32 {
 
     func void operator--() { value == 0.0f ? (value = FLOAT_MAX) : value -= 1.0f; }
     func void operator++() { value == FLOAT_MAX ? (value = 0.0f) : value += 1.0f; }
+    func f32 operator!() { return f32(!value); }
 
     // Helper Functions
     func TYPES get_type() { return TYPES::F32; }
@@ -86,3 +89,5 @@ struct f32 {
     func operator i64();
     func operator f64();
 };
+
+inline const func f32 f32::ZERO = {0.0f};

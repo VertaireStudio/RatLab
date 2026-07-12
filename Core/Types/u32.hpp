@@ -26,6 +26,8 @@ struct f64;
 
 
 struct u32 {
+    static const u32 ZERO;
+
     // Data
     unsigned int value;
 
@@ -60,6 +62,7 @@ struct u32 {
 
     func void operator--() { value == 0 ? (value = U32_MAX) : value -= 1; }
     func void operator++() { value == U32_MAX ? (value = 0) : value += 1; }
+    func u32 operator!() { return u32(!value); }
 
     // Helper Functions
     func TYPES get_type() { return TYPES::U32; }
@@ -82,3 +85,5 @@ struct u32 {
     func operator f32();
     func operator f64();
 };
+
+inline const func u32 u32::ZERO = {0};
