@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/ratlab_benchmarks.dir/main.cpp.o -o ratlab_benchmarks  ../benchmark/src/libbenchmark.a -lrt 
