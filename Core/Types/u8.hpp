@@ -52,7 +52,6 @@ struct u8 {
     func u8 operator/(u8 p_value) const { return p_value.value == 0 ? u8(U8_MAX) : u8(value / p_value.get()); }
     func void operator/=(u8 p_value) { p_value.value == 0 ? (value = U8_MAX) : (value /= p_value.value); }
 
-    func void operator=(u8 p_value) { value = p_value.value; }
     func bool operator==(u8 p_value) { return value == p_value.value; }
     func bool operator!=(u8 p_value) { return value != p_value.value; }
     func bool operator<(u8 p_value) { return value < p_value.value; }

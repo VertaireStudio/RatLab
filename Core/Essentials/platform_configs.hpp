@@ -65,16 +65,25 @@ static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTUR
 // If you cannot define the CXX macro, then uncomment the following and adjust it's value based on your C++ version:
 // #define CXX 17
 
-#if defined(CXX)
-    #if CXX == 17
-static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_17;
-    #elif CXX == 20
-static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_20;
-    #elif CXX == 23
-static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_23;
-    #elif CXX == 26
+#if defined (CXX_VERSION_MACRO)
+#undef CXX_VERSION_MACRO
+#endif
+
+#if defined(__cplusplus)
+    #if __cplusplus >= 202600L
+#define CXX_VERSION_MACRO 26
 static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_26;
+    #elif __cplusplus >= 202300L
+#define CXX_VERSION_MACRO 23
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_23;
+    #elif __cplusplus >= 202000L
+#define CXX_VERSION_MACRO 20
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_20;
+    #elif __cplusplus >= 201700L
+#define CXX_VERSION_MACRO 17
+static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::CXX_17;
     #endif
 #else
+#define CXX_VERSION_MACRO 0
 static constexpr const CXX_VERSIONS CXX_VERSION = CXX_VERSIONS::UNKNOWN_CXX_VERSION;
 #endif

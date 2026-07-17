@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "platform_configs.hpp"
+
 // Implementation is inspired by Godot Engine's 'typedefs.h' file:
 // https://github.com/godotengine/godot/blob/master/core/typedefs.h
 
@@ -32,7 +34,7 @@
 #endif
 
 // Only inlines a function when compiling the project to a 'dev' version.
-#if defined(COMPILE_DEV)
+#if defined(RATLAB_DEV_BUILD)
     #define test_inline always_inline
 #else
     #define test_inline
@@ -49,8 +51,8 @@
 
 // Will apply either 'constexpr' or 'consteval' depending on the use case.
 // NOTE: 'constexpr' and 'consteval' is best used above C++17, otherwise no compile-time evaluation will happen.
-#if defined(CXX) && CXX >= 20
-    #if defined(COMPILE_CONSTEVAL)
+#if defined (CMAKE_CXX_STANDARD) && CMAKE_CXX_STANDARD >= 20
+    #if defined(RATLAB_CONSTEVAL)
         #define func consteval
     #else
         #define func constexpr

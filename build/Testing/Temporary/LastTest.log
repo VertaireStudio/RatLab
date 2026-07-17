@@ -1,0 +1,32 @@
+Start testing: Jul 17 02:17 CEST
+----------------------------------------------------------
+1/1 Testing: ratlab_tests
+1/1 Test: ratlab_tests
+Command: "/home/cellegen/Documents/GitHub/RatLab/build/Tests/ratlab_tests"
+Directory: /home/cellegen/Documents/GitHub/RatLab/build/Tests
+"ratlab_tests" start time: Jul 17 02:17 CEST
+Output:
+----------------------------------------------------------
+[doctest] doctest version is "2.5.0"
+[doctest] run with "--help" for options
+===============================================================================
+[doctest] test cases: 1 | 1 passed | 0 failed | 0 skipped
+[doctest] assertions: 1 | 1 passed | 0 failed |
+[doctest] Status: SUCCESS!
+[          ] tester smoke
+[   PASS   ] tester smoke
+
+=============== Test Summary ===============
+  Total:  1
+  Passed: 1
+  Failed: 0
+============================================
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"ratlab_tests" end time: Jul 17 02:17 CEST
+"ratlab_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Jul 17 02:17 CEST

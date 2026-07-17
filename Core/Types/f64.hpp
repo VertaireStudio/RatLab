@@ -55,7 +55,6 @@ struct f64 {
     func f64 operator/(f64 p_value) const { return p_value.value == 0.0 ? f64(DOUBLE_MAX) : f64(value / p_value.get()); }
     func void operator/=(f64 p_value) { p_value.value == 0.0 ? (value = DOUBLE_MAX) : (value /= p_value.value); }
 
-    func void operator=(f64 p_value) { value = p_value.value; }
     func bool operator==(f64 p_value) { return value == p_value.value; }
     func bool operator!=(f64 p_value) { return value != p_value.value; }
     func bool operator<(f64 p_value) { return value < p_value.value; }

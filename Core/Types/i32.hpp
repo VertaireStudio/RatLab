@@ -29,18 +29,18 @@ struct i32 {
     static const i32 ZERO;
 
     // Data
-    unsigned int value;
+    signed int value;
 
     // Constructor
     func i32() : value(0) {}
-    func i32(unsigned int p_value) : value(p_value) {}
+    func i32(signed int p_value) : value(p_value) {}
     
     template<typename T>
-    func i32(T p_value) : value((unsigned int)p_value) {}
+    func i32(T p_value) : value((signed int)p_value) {}
 
     // Getsets
-    func unsigned int get() const { return value; }
-    func void set(unsigned int p_value) { value = p_value; }
+    func signed int get() const { return value; }
+    func void set(signed int p_value) { value = p_value; }
 
     // Operators
     func i32 operator+(i32 p_value) const { return i32(value + p_value.get()); }
@@ -52,7 +52,6 @@ struct i32 {
     func i32 operator/(i32 p_value) const { return p_value.value == 0 ? i32(I32_MAX) : i32(value / p_value.get()); }
     func void operator/=(i32 p_value) { p_value.value == 0 ? (value = I32_MAX) : (value /= p_value.value); }
 
-    func void operator=(i32 p_value) { value = p_value.value; }
     func bool operator==(i32 p_value) { return value == p_value.value; }
     func bool operator!=(i32 p_value) { return value != p_value.value; }
     func bool operator<(i32 p_value) { return value < p_value.value; }

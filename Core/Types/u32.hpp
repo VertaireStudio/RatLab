@@ -52,7 +52,6 @@ struct u32 {
     func u32 operator/(u32 p_value) const { return p_value.value == 0 ? u32(U32_MAX) : u32(value / p_value.get()); }
     func void operator/=(u32 p_value) { p_value.value == 0 ? (value = U32_MAX) : (value /= p_value.value); }
 
-    func void operator=(u32 p_value) { value = p_value.value; }
     func bool operator==(u32 p_value) { return value == p_value.value; }
     func bool operator!=(u32 p_value) { return value != p_value.value; }
     func bool operator<(u32 p_value) { return value < p_value.value; }

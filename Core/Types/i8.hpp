@@ -29,18 +29,18 @@ struct i8 {
     static const i8 ZERO;
 
     // Data
-    unsigned char value;
+    signed char value;
 
     // Constructor
     func i8() : value(0) {}
-    func i8(unsigned char p_value) : value(p_value) {}
+    func i8(signed char p_value) : value(p_value) {}
     
     template<typename T>
-    func i8(T p_value) : value((unsigned char)p_value) {}
+    func i8(T p_value) : value((signed char)p_value) {}
 
     // Getsets
-    func unsigned char get() const { return value; }
-    func void set(unsigned char p_value) { value = p_value; }
+    func signed char get() const { return value; }
+    func void set(signed char p_value) { value = p_value; }
 
     // Operators
     func i8 operator+(i8 p_value) const { return i8(value + p_value.get()); }
@@ -52,7 +52,6 @@ struct i8 {
     func i8 operator/(i8 p_value) const { return p_value.value == 0 ? i8(I8_MAX) : i8(value / p_value.get()); }
     func void operator/=(i8 p_value) { p_value.value == 0 ? (value = I8_MAX) : (value /= p_value.value); }
 
-    func void operator=(i8 p_value) { value = p_value.value; }
     func bool operator==(i8 p_value) { return value == p_value.value; }
     func bool operator!=(i8 p_value) { return value != p_value.value; }
     func bool operator<(i8 p_value) { return value < p_value.value; }

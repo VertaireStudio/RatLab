@@ -29,18 +29,18 @@ struct i64 {
     static const i64 ZERO;
 
     // Data
-    unsigned long long value;
+    signed long long value;
 
     // Constructor
     func i64() : value(0) {}
-    func i64(unsigned long long p_value) : value(p_value) {}
+    func i64(signed long long p_value) : value(p_value) {}
     
     template<typename T>
-    func i64(T p_value) : value((unsigned long long)p_value) {}
+    func i64(T p_value) : value((signed long long)p_value) {}
 
     // Getsets
-    func unsigned long long get() const { return value; }
-    func void set(unsigned long long p_value) { value = p_value; }
+    func signed long long get() const { return value; }
+    func void set(signed long long p_value) { value = p_value; }
 
     // Operators
     func i64 operator+(i64 p_value) const { return i64(value + p_value.get()); }
@@ -52,7 +52,6 @@ struct i64 {
     func i64 operator/(i64 p_value) const { return p_value.value == 0 ? i64(I64_MAX) : i64(value / p_value.get()); }
     func void operator/=(i64 p_value) { p_value.value == 0 ? (value = I64_MAX) : (value /= p_value.value); }
 
-    func void operator=(i64 p_value) { value = p_value.value; }
     func bool operator==(i64 p_value) { return value == p_value.value; }
     func bool operator!=(i64 p_value) { return value != p_value.value; }
     func bool operator<(i64 p_value) { return value < p_value.value; }

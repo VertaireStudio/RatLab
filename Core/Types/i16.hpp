@@ -29,18 +29,18 @@ struct i16 {
     static const i16 ZERO;
 
     // Data
-    unsigned short value;
+    signed short value;
 
     // Constructor
     func i16() : value(0) {}
-    func i16(unsigned short p_value) : value(p_value) {}
+    func i16(signed short p_value) : value(p_value) {}
     
     template<typename T>
-    func i16(T p_value) : value((unsigned short)p_value) {}
+    func i16(T p_value) : value((signed short)p_value) {}
 
     // Getsets
-    func unsigned short get() const { return value; }
-    func void set(unsigned short p_value) { value = p_value; }
+    func signed short get() const { return value; }
+    func void set(signed short p_value) { value = p_value; }
 
     // Operators
     func i16 operator+(i16 p_value) const { return i16(value + p_value.get()); }
@@ -52,7 +52,6 @@ struct i16 {
     func i16 operator/(i16 p_value) const { return p_value.value == 0 ? i16(I16_MAX) : i16(value / p_value.get()); }
     func void operator/=(i16 p_value) { p_value.value == 0 ? (value = I16_MAX) : (value /= p_value.value); }
 
-    func void operator=(i16 p_value) { value = p_value.value; }
     func bool operator==(i16 p_value) { return value == p_value.value; }
     func bool operator!=(i16 p_value) { return value != p_value.value; }
     func bool operator<(i16 p_value) { return value < p_value.value; }

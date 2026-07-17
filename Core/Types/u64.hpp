@@ -52,7 +52,6 @@ struct u64 {
     func u64 operator/(u64 p_value) const { return p_value.value == 0 ? u64(U64_MAX) : u64(value / p_value.get()); }
     func void operator/=(u64 p_value) { p_value.value == 0 ? (value = U64_MAX) : (value /= p_value.value); }
 
-    func void operator=(u64 p_value) { value = p_value.value; }
     func bool operator==(u64 p_value) { return value == p_value.value; }
     func bool operator!=(u64 p_value) { return value != p_value.value; }
     func bool operator<(u64 p_value) { return value < p_value.value; }

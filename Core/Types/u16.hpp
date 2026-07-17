@@ -52,7 +52,6 @@ struct u16 {
     func u16 operator/(u16 p_value) const { return p_value.value == 0 ? u16(U16_MAX) : u16(value / p_value.get()); }
     func void operator/=(u16 p_value) { p_value.value == 0 ? (value = U16_MAX) : (value /= p_value.value); }
 
-    func void operator=(u16 p_value) { value = p_value.value; }
     func bool operator==(u16 p_value) { return value == p_value.value; }
     func bool operator!=(u16 p_value) { return value != p_value.value; }
     func bool operator<(u16 p_value) { return value < p_value.value; }

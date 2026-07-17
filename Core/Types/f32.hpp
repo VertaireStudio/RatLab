@@ -55,7 +55,6 @@ struct f32 {
     func f32 operator/(f32 p_value) const { return p_value.value == 0.0f ? f32(FLOAT_MAX) : f32(value / p_value.get()); }
     func void operator/=(f32 p_value) { p_value.value == 0.0f ? (value = FLOAT_MAX) : (value /= p_value.value); }
 
-    func void operator=(f32 p_value) { value = p_value.value; }
     func bool operator==(f32 p_value) { return value == p_value.value; }
     func bool operator!=(f32 p_value) { return value != p_value.value; }
     func bool operator<(f32 p_value) { return value < p_value.value; }
