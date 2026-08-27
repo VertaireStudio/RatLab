@@ -33,13 +33,6 @@
     #define always_inline_ inline
 #endif
 
-// Only inlines a function when compiling the project to a 'dev' version.
-#if defined(RATLAB_DEV_BUILD)
-    #define test_inline always_inline
-#else
-    #define test_inline
-#endif
-
 // Will never inline a function, regardless of compiling configurations.
 #if defined(__GNUC__)
     #define no_inline __attribute__((noinline))
@@ -51,12 +44,8 @@
 
 // Will apply either 'constexpr' or 'consteval' depending on the use case.
 // NOTE: 'constexpr' and 'consteval' is best used above C++17, otherwise no compile-time evaluation will happen.
-#if defined (CMAKE_CXX_STANDARD) && CMAKE_CXX_STANDARD >= 20
-    #if defined(RATLAB_CONSTEVAL)
-        #define func consteval
-    #else
-        #define func constexpr
-    #endif
+#if defined(CPP_VERSION) && CPP_VERSION >= 17
+    #define func constexpr
 #else
     #define func
 #endif

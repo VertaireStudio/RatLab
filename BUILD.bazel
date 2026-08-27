@@ -1,0 +1,32 @@
+# Root build file — aliases + C++ standard selection
+# Usage:
+#   bazel build //...                          # default C++20
+#   bazel build --define cpp_std=17 //...      # C++17 → __cplusplus=201703L → CPP_VERSION=17
+#   bazel build --define cpp_std=23 //...      # C++23 → __cplusplus=202302L → CPP_VERSION=23
+#   bazel build --config=cpp17 //...           # shortcut via .bazelrc
+
+config_setting(
+    name = "cpp17",
+    values = {"define": "cpp_std=17"},
+)
+
+config_setting(
+    name = "cpp20",
+    values = {"define": "cpp_std=20"},
+)
+
+config_setting(
+    name = "cpp23",
+    values = {"define": "cpp_std=23"},
+)
+
+config_setting(
+    name = "cpp26",
+    values = {"define": "cpp_std=26"},
+)
+
+alias(
+    name = "ratlab",
+    actual = "//Core:core",
+    visibility = ["//visibility:public"],
+)

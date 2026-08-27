@@ -1,0 +1,16 @@
+# RatLab — C++ standard selection
+# Default is C++20 (matches //conditions:default in BUILD.bazel).
+# __cplusplus is set by the compiler via -std= flag, which then drives
+# CPP_VERSION / CURRENT_CPP_VERSION in Core/Essentials/platform_configs.hpp:78
+# and func macro in Core/Essentials/def_configs.hpp:47
+
+# Shortcuts: bazel build --config=cpp17 //...  (also: --define cpp_std=17)
+build:cpp17 --define cpp_std=17
+build:cpp20 --define cpp_std=20
+build:cpp23 --define cpp_std=23
+build:cpp26 --define cpp_std=26
+
+# Optional: pass extra warnings via --config=ci
+build:ci --announce_rc
+
+common --enable_bzlmod
