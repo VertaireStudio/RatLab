@@ -8,9 +8,10 @@
 
 #include "benchmarker.hpp"
 #include "../Core/Math/math_funcs.hpp"
+#include <thread>
 
-static volatile float sink_f32;
-static volatile double sink_f64;
+static thread_local volatile float sink_f32;
+static thread_local volatile double sink_f64;
 
 static constexpr const f32 in_f32_a = f32(1.57f);
 static constexpr const f32 in_f32_b = f32(0.75f);
@@ -129,6 +130,60 @@ void bench_trig(Benchmarker& r_bench) {
     r_bench.iterate("tan(f64)", bench_tan_f64, 1);
 }
 
+static u32 get_max_threads() {
+    u32 hw = std::thread::hardware_concurrency();
+    return hw > 0 ? hw : 4;
+}
+
+static void run_mt_group(Benchmarker& r_bench, const char* p_label, void (*p_fn_f32)(), void (*p_fn_f64)()) {
+    u32 max_t = get_max_threads();
+    u32 counts[] = {1, 2, 4, max_t};
+    char name[32];
+
+    for (u32 t : counts) {
+        std::snprintf(name, sizeof(name), "%s(f32) x%u", p_label, t.get_value());
+        r_bench.iterate_threaded(name, p_fn_f32, t);
+    }
+    for (u32 t : counts) {
+        std::snprintf(name, sizeof(name), "%s(f64) x%u", p_label, t.get_value());
+        r_bench.iterate_threaded(name, p_fn_f64, t);
+    }
+}
+
+void bench_basic_mt(Benchmarker& r_bench) {
+    run_mt_group(r_bench, "abs", bench_abs_f32, bench_abs_f64);
+    run_mt_group(r_bench, "min", bench_min_f32, bench_min_f64);
+    run_mt_group(r_bench, "max", bench_max_f32, bench_max_f64);
+    run_mt_group(r_bench, "clamp", bench_clamp_f32, bench_clamp_f64);
+}
+
+void bench_rounding_mt(Benchmarker& r_bench) {
+    run_mt_group(r_bench, "trunc", bench_trunc_f32, bench_trunc_f64);
+    run_mt_group(r_bench, "decimal", bench_decimal_f32, bench_decimal_f64);
+    run_mt_group(r_bench, "floor", bench_floor_f32, bench_floor_f64);
+    run_mt_group(r_bench, "ceil", bench_ceil_f32, bench_ceil_f64);
+    run_mt_group(r_bench, "round", bench_round_f32, bench_round_f64);
+}
+
+void bench_vector_mt(Benchmarker& r_bench) {
+    run_mt_group(r_bench, "cross", bench_cross_f32, bench_cross_f64);
+    run_mt_group(r_bench, "dot", bench_dot_f32, bench_dot_f64);
+}
+
+void bench_trig_series_mt(Benchmarker& r_bench) {
+    run_mt_group(r_bench, "sin_series", bench_sin_series_f32, bench_sin_series_f64);
+    run_mt_group(r_bench, "cos_series", bench_cos_series_f32, bench_cos_series_f64);
+    run_mt_group(r_bench, "reduce_2pi", bench_reduce_2pi_f32, bench_reduce_2pi_f64);
+    run_mt_group(r_bench, "sin_half", bench_sin_half_f32, bench_sin_half_f64);
+    run_mt_group(r_bench, "cos_half", bench_cos_half_f32, bench_cos_half_f64);
+}
+
+void bench_trig_mt(Benchmarker& r_bench) {
+    run_mt_group(r_bench, "sin", bench_sin_f32, bench_sin_f64);
+    run_mt_group(r_bench, "cos", bench_cos_f32, bench_cos_f64);
+    run_mt_group(r_bench, "tan", bench_tan_f32, bench_tan_f64);
+}
+
 int main() {
     Benchmarker bench;
 
@@ -137,6 +192,12 @@ int main() {
     bench.run_group("Vector", bench_vector);
     bench.run_group("Trig Series", bench_trig_series);
     bench.run_group("Trigonometry", bench_trig);
+
+    bench.run_group("Basic MT", bench_basic_mt);
+    bench.run_group("Rounding MT", bench_rounding_mt);
+    bench.run_group("Vector MT", bench_vector_mt);
+    bench.run_group("Trig Series MT", bench_trig_series_mt);
+    bench.run_group("Trigonometry MT", bench_trig_mt);
 
     bench.print_results();
     return 0;

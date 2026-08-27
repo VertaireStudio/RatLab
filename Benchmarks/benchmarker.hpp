@@ -11,7 +11,18 @@
 #include "../Core/Essentials/essentials.hpp"
 #include <chrono>
 #include <cstdio>
+#include <string>
+#include <thread>
+#include <deque>
 #include <vector>
+#include <atomic>
+
+#if WINDOWS_ENABLED
+#include <windows.h>
+#else
+#include <pthread.h>
+#include <sched.h>
+#endif
 
 #if WINDOWS_ENABLED
 #include <io.h>
@@ -37,6 +48,7 @@ struct Benchmarker {
 
     std::vector<BenchResult> results;
     std::vector<GroupData> groups;
+    std::deque<std::string> name_store;
     u32 benchmarks_run;
     bool use_color;
     f64 duration_ns;
@@ -262,6 +274,90 @@ struct Benchmarker {
         warmup(p_fn);
 
         BenchResult result = measure_timed(p_name, p_fn, (p_seconds * 1000000000.0).get_value());
+
+        results.push_back(result);
+        benchmarks_run += 1;
+    }
+
+    void iterate_threaded(const char* p_name, void (*p_fn)(), u32 p_threads, f64 p_seconds = 1.0) {
+        // Warmup: run on p_threads threads.
+        {
+            std::vector<std::thread> warmup_threads;
+            for (u32 i = 0; i < p_threads; i += 1) {
+                warmup_threads.emplace_back([p_fn]() {
+                    for (u32 j = 0; j < WARMUP_ITERATIONS; j += 1) {
+                        p_fn();
+                    }
+                });
+            }
+            for (auto& t : warmup_threads) {
+                t.join();
+            }
+        }
+
+        // Measurement: spawn p_threads threads, each calling p_fn in a loop until deadline.
+        auto deadline = std::chrono::high_resolution_clock::now() +
+                        std::chrono::duration_cast<std::chrono::high_resolution_clock::duration>(
+                            std::chrono::duration<double, std::nano>(p_seconds.get_value() * 1000000000.0));
+
+        std::vector<std::thread> threads;
+        std::vector<u64> counts(p_threads.get_value(), 0);
+        std::atomic<bool> ready{false};
+
+        for (u32 i = 0; i < p_threads; i += 1) {
+            threads.emplace_back([p_fn, &deadline, &counts, i, &ready]() {
+                while (!ready.load(std::memory_order_acquire)) {
+                    // Spin until all threads are spawned.
+                }
+                while (std::chrono::high_resolution_clock::now() < deadline) {
+                    for (u32 j = 0; j < SAMPLE_INTERVAL; j += 1) {
+                        p_fn();
+                        counts[i.get_value()] += 1;
+                    }
+                }
+            });
+
+            // Pin each thread to a distinct physical core.
+            #if WINDOWS_ENABLED
+            SetThreadAffinityMask(threads.back().native_handle(), 1ULL << i.get_value());
+            #else
+            {
+                cpu_set_t set;
+                CPU_ZERO(&set);
+                CPU_SET(i.get_value(), &set);
+                pthread_setaffinity_np(threads.back().native_handle(), sizeof(cpu_set_t), &set);
+            }
+            #endif
+        }
+
+        compiler_barrier();
+        std::chrono::time_point start = std::chrono::high_resolution_clock::now();
+        ready.store(true, std::memory_order_release);
+
+        // Capture end time before join to exclude join overhead from measurement.
+        // Wait for at least one thread to finish, then record the time.
+        // All threads exit at roughly the same time (within deadline jitter).
+        threads[0].join();
+        compiler_barrier();
+        std::chrono::time_point end = std::chrono::high_resolution_clock::now();
+
+        // Join remaining threads (they should exit immediately or very shortly).
+        for (u32 i = 1; i < p_threads; i += 1) {
+            threads[i.get_value()].join();
+        }
+
+        std::chrono::duration<double, std::nano> elapsed = end - start;
+
+        u64 total_count = 0;
+        for (u64 c : counts) {
+            total_count += c;
+        }
+
+        BenchResult result;
+        name_store.push_back(std::string(p_name));
+        result.name = name_store.back().c_str();
+        result.iteration_count = (total_count > 0xFFFFFFFFull) ? 0xFFFFFFFFu : to_u32(total_count);
+        result.total_ns = elapsed.count();
 
         results.push_back(result);
         benchmarks_run += 1;
