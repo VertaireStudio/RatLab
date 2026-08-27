@@ -50,35 +50,35 @@ struct u8 {
     func u8 operator-() const { return u8(-data); }
     func u8 operator~() const { return u8(~data); }
 
-    func u8 operator--() { data -= 1; return *this; }
-    func u8 operator++() { data += 1; return *this; }
-    func u8 operator--(int) { ++*this; return *this; }
-    func u8 operator++(int) { ++*this; return *this; }
+    func u8 operator--() { if (!read_only) data -= 1; return *this; }
+    func u8 operator++() { if (!read_only) data += 1; return *this; }
+    func u8 operator--(int) { if (!read_only) ++*this; return *this; }
+    func u8 operator++(int) { if (!read_only) ++*this; return *this; }
 
     func void operator+=(const u8 p_value) { if (!read_only) data += p_value.data; }
-    func void operator-=(const u8 p_value) { data -= p_value.data; }
-    func void operator*=(const u8 p_value) { data *= p_value.data; }
-    func void operator/=(const u8 p_value) { data /= p_value.data; }
-    func void operator%=(const u8 p_value) { data %= p_value.data; }
-    func void operator&=(const u8 p_value) { data &= p_value.data; }
-    func void operator|=(const u8 p_value) { data |= p_value.data; }
-    func void operator^=(const u8 p_value) { data ^= p_value.data; }
-    func void operator<<=(const u8 p_value) { data <<= p_value.data; }
-    func void operator>>=(const u8 p_value) { data >>= p_value.data; }
+    func void operator-=(const u8 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const u8 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const u8 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const u8 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const u8 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const u8 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const u8 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const u8 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const u8 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const unsigned char p_value) { data += p_value; }
-    func void operator-=(const unsigned char p_value) { data -= p_value; }
-    func void operator*=(const unsigned char p_value) { data *= p_value; }
-    func void operator/=(const unsigned char p_value) { data /= p_value; }
-    func void operator%=(const unsigned char p_value) { data %= p_value; }
-    func void operator&=(const unsigned char p_value) { data &= p_value; }
-    func void operator|=(const unsigned char p_value) { data |= p_value; }
-    func void operator^=(const unsigned char p_value) { data ^= p_value; }
-    func void operator<<=(const unsigned char p_value) { data <<= p_value; }
-    func void operator>>=(const unsigned char p_value) { data >>= p_value; }
+    func void operator+=(const unsigned char p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const unsigned char p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const unsigned char p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const unsigned char p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const unsigned char p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const unsigned char p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const unsigned char p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const unsigned char p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const unsigned char p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const unsigned char p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const u8 p_value) { data = p_value.data; }
-    func void operator=(const unsigned char p_value) { data = p_value; }
+    func void operator=(const u8 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const unsigned char p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const u8 p_value) const { return data == p_value.data; }
     func bool operator!=(const u8 p_value) const { return data != p_value.data; }
@@ -95,19 +95,21 @@ struct u8 {
     func bool operator<=(const unsigned char p_value) const { return data <= p_value; }
 
     func unsigned char get_value() const { return data; }
-    func void set_value(const unsigned char p_value) { data = p_value; }
+    func void set_value(const unsigned char p_value) { if (!read_only) data = p_value; }
 };
 
 // unsigned short - u16
 struct u16 {
     private:
     unsigned short data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func u16() : data(0) {}
-    func u16(const unsigned short p_value) : data(p_value) {}
+    func u16() : data(0), read_only(false) {}
+    func u16(const unsigned short p_value) : data(p_value), read_only(false) {}
+    func u16(const unsigned short p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -136,35 +138,35 @@ struct u16 {
     func u16 operator-() const { return u16(-data); }
     func u16 operator~() const { return u16(~data); }
 
-    func u16 operator--() { data -= 1; return *this; }
-    func u16 operator++() { data += 1; return *this; }
-    func u16 operator--(int) { ++*this; return *this; }
-    func u16 operator++(int) { ++*this; return *this; }
+    func u16 operator--() { if (!read_only) data -= 1; return *this; }
+    func u16 operator++() { if (!read_only) data += 1; return *this; }
+    func u16 operator--(int) { if (!read_only) ++*this; return *this; }
+    func u16 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const u16 p_value) { data += p_value.data; }
-    func void operator-=(const u16 p_value) { data -= p_value.data; }
-    func void operator*=(const u16 p_value) { data *= p_value.data; }
-    func void operator/=(const u16 p_value) { data /= p_value.data; }
-    func void operator%=(const u16 p_value) { data %= p_value.data; }
-    func void operator&=(const u16 p_value) { data &= p_value.data; }
-    func void operator|=(const u16 p_value) { data |= p_value.data; }
-    func void operator^=(const u16 p_value) { data ^= p_value.data; }
-    func void operator<<=(const u16 p_value) { data <<= p_value.data; }
-    func void operator>>=(const u16 p_value) { data >>= p_value.data; }
+    func void operator+=(const u16 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const u16 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const u16 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const u16 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const u16 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const u16 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const u16 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const u16 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const u16 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const u16 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const unsigned short p_value) { data += p_value; }
-    func void operator-=(const unsigned short p_value) { data -= p_value; }
-    func void operator*=(const unsigned short p_value) { data *= p_value; }
-    func void operator/=(const unsigned short p_value) { data /= p_value; }
-    func void operator%=(const unsigned short p_value) { data %= p_value; }
-    func void operator&=(const unsigned short p_value) { data &= p_value; }
-    func void operator|=(const unsigned short p_value) { data |= p_value; }
-    func void operator^=(const unsigned short p_value) { data ^= p_value; }
-    func void operator<<=(const unsigned short p_value) { data <<= p_value; }
-    func void operator>>=(const unsigned short p_value) { data >>= p_value; }
+    func void operator+=(const unsigned short p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const unsigned short p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const unsigned short p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const unsigned short p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const unsigned short p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const unsigned short p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const unsigned short p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const unsigned short p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const unsigned short p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const unsigned short p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const u16 p_value) { data = p_value.data; }
-    func void operator=(const unsigned short p_value) { data = p_value; }
+    func void operator=(const u16 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const unsigned short p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const u16 p_value) const { return data == p_value.data; }
     func bool operator!=(const u16 p_value) const { return data != p_value.data; }
@@ -181,19 +183,21 @@ struct u16 {
     func bool operator<=(const unsigned short p_value) const { return data <= p_value; }
 
     func unsigned short get_value() const { return data; }
-    func void set_value(const unsigned short p_value) { data = p_value; }
+    func void set_value(const unsigned short p_value) { if (!read_only) data = p_value; }
 };
 
 // unsigned int - u32
 struct u32 {
     private:
     unsigned int data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func u32() : data(0) {}
-    func u32(const unsigned int p_value) : data(p_value) {}
+    func u32() : data(0), read_only(false) {}
+    func u32(const unsigned int p_value) : data(p_value), read_only(false) {}
+    func u32(const unsigned int p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -222,35 +226,35 @@ struct u32 {
     func u32 operator-() const { return u32(-data); }
     func u32 operator~() const { return u32(~data); }
 
-    func u32 operator--() { data -= 1; return *this; }
-    func u32 operator++() { data += 1; return *this; }
-    func u32 operator--(int) { ++*this; return *this; }
-    func u32 operator++(int) { ++*this; return *this; }
+    func u32 operator--() { if (!read_only) data -= 1; return *this; }
+    func u32 operator++() { if (!read_only) data += 1; return *this; }
+    func u32 operator--(int) { if (!read_only) ++*this; return *this; }
+    func u32 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const u32 p_value) { data += p_value.data; }
-    func void operator-=(const u32 p_value) { data -= p_value.data; }
-    func void operator*=(const u32 p_value) { data *= p_value.data; }
-    func void operator/=(const u32 p_value) { data /= p_value.data; }
-    func void operator%=(const u32 p_value) { data %= p_value.data; }
-    func void operator&=(const u32 p_value) { data &= p_value.data; }
-    func void operator|=(const u32 p_value) { data |= p_value.data; }
-    func void operator^=(const u32 p_value) { data ^= p_value.data; }
-    func void operator<<=(const u32 p_value) { data <<= p_value.data; }
-    func void operator>>=(const u32 p_value) { data >>= p_value.data; }
+    func void operator+=(const u32 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const u32 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const u32 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const u32 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const u32 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const u32 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const u32 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const u32 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const u32 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const u32 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const unsigned int p_value) { data += p_value; }
-    func void operator-=(const unsigned int p_value) { data -= p_value; }
-    func void operator*=(const unsigned int p_value) { data *= p_value; }
-    func void operator/=(const unsigned int p_value) { data /= p_value; }
-    func void operator%=(const unsigned int p_value) { data %= p_value; }
-    func void operator&=(const unsigned int p_value) { data &= p_value; }
-    func void operator|=(const unsigned int p_value) { data |= p_value; }
-    func void operator^=(const unsigned int p_value) { data ^= p_value; }
-    func void operator<<=(const unsigned int p_value) { data <<= p_value; }
-    func void operator>>=(const unsigned int p_value) { data >>= p_value; }
+    func void operator+=(const unsigned int p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const unsigned int p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const unsigned int p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const unsigned int p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const unsigned int p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const unsigned int p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const unsigned int p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const unsigned int p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const unsigned int p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const unsigned int p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const u32 p_value) { data = p_value.data; }
-    func void operator=(const unsigned int p_value) { data = p_value; }
+    func void operator=(const u32 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const unsigned int p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const u32 p_value) const { return data == p_value.data; }
     func bool operator!=(const u32 p_value) const { return data != p_value.data; }
@@ -267,19 +271,21 @@ struct u32 {
     func bool operator<=(const unsigned int p_value) const { return data <= p_value; }
 
     func unsigned int get_value() const { return data; }
-    func void set_value(const unsigned int p_value) { data = p_value; }
+    func void set_value(const unsigned int p_value) { if (!read_only) data = p_value; }
 };
 
 // unsigned long long - u64
 struct u64 {
     private:
     unsigned long long data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func u64() : data(0) {}
-    func u64(const unsigned long long p_value) : data(p_value) {}
+    func u64() : data(0), read_only(false) {}
+    func u64(const unsigned long long p_value) : data(p_value), read_only(false) {}
+    func u64(const unsigned long long p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -308,35 +314,35 @@ struct u64 {
     func u64 operator-() const { return u64(-data); }
     func u64 operator~() const { return u64(~data); }
 
-    func u64 operator--() { data -= 1; return *this; }
-    func u64 operator++() { data += 1; return *this; }
-    func u64 operator--(int) { ++*this; return *this; }
-    func u64 operator++(int) { ++*this; return *this; }
+    func u64 operator--() { if (!read_only) data -= 1; return *this; }
+    func u64 operator++() { if (!read_only) data += 1; return *this; }
+    func u64 operator--(int) { if (!read_only) ++*this; return *this; }
+    func u64 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const u64 p_value) { data += p_value.data; }
-    func void operator-=(const u64 p_value) { data -= p_value.data; }
-    func void operator*=(const u64 p_value) { data *= p_value.data; }
-    func void operator/=(const u64 p_value) { data /= p_value.data; }
-    func void operator%=(const u64 p_value) { data %= p_value.data; }
-    func void operator&=(const u64 p_value) { data &= p_value.data; }
-    func void operator|=(const u64 p_value) { data |= p_value.data; }
-    func void operator^=(const u64 p_value) { data ^= p_value.data; }
-    func void operator<<=(const u64 p_value) { data <<= p_value.data; }
-    func void operator>>=(const u64 p_value) { data >>= p_value.data; }
+    func void operator+=(const u64 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const u64 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const u64 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const u64 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const u64 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const u64 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const u64 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const u64 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const u64 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const u64 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const unsigned long long p_value) { data += p_value; }
-    func void operator-=(const unsigned long long p_value) { data -= p_value; }
-    func void operator*=(const unsigned long long p_value) { data *= p_value; }
-    func void operator/=(const unsigned long long p_value) { data /= p_value; }
-    func void operator%=(const unsigned long long p_value) { data %= p_value; }
-    func void operator&=(const unsigned long long p_value) { data &= p_value; }
-    func void operator|=(const unsigned long long p_value) { data |= p_value; }
-    func void operator^=(const unsigned long long p_value) { data ^= p_value; }
-    func void operator<<=(const unsigned long long p_value) { data <<= p_value; }
-    func void operator>>=(const unsigned long long p_value) { data >>= p_value; }
+    func void operator+=(const unsigned long long p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const unsigned long long p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const unsigned long long p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const unsigned long long p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const unsigned long long p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const unsigned long long p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const unsigned long long p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const unsigned long long p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const unsigned long long p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const unsigned long long p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const u64 p_value) { data = p_value.data; }
-    func void operator=(const unsigned long long p_value) { data = p_value; }
+    func void operator=(const u64 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const unsigned long long p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const u64 p_value) const { return data == p_value.data; }
     func bool operator!=(const u64 p_value) const { return data != p_value.data; }
@@ -353,19 +359,21 @@ struct u64 {
     func bool operator<=(const unsigned long long p_value) const { return data <= p_value; }
 
     func unsigned long long get_value() const { return data; }
-    func void set_value(const unsigned long long p_value) { data = p_value; }
+    func void set_value(const unsigned long long p_value) { if (!read_only) data = p_value; }
 };
 
 // signed char - i8
 struct i8 {
     private:
     signed char data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func i8() : data(0) {}
-    func i8(const signed char p_value) : data(p_value) {}
+    func i8() : data(0), read_only(false) {}
+    func i8(const signed char p_value) : data(p_value), read_only(false) {}
+    func i8(const signed char p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -394,35 +402,35 @@ struct i8 {
     func i8 operator-() const { return i8(-data); }
     func i8 operator~() const { return i8(~data); }
 
-    func i8 operator--() { data -= 1; return *this; }
-    func i8 operator++() { data += 1; return *this; }
-    func i8 operator--(int) { ++*this; return *this; }
-    func i8 operator++(int) { ++*this; return *this; }
+    func i8 operator--() { if (!read_only) data -= 1; return *this; }
+    func i8 operator++() { if (!read_only) data += 1; return *this; }
+    func i8 operator--(int) { if (!read_only) ++*this; return *this; }
+    func i8 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const i8 p_value) { data += p_value.data; }
-    func void operator-=(const i8 p_value) { data -= p_value.data; }
-    func void operator*=(const i8 p_value) { data *= p_value.data; }
-    func void operator/=(const i8 p_value) { data /= p_value.data; }
-    func void operator%=(const i8 p_value) { data %= p_value.data; }
-    func void operator&=(const i8 p_value) { data &= p_value.data; }
-    func void operator|=(const i8 p_value) { data |= p_value.data; }
-    func void operator^=(const i8 p_value) { data ^= p_value.data; }
-    func void operator<<=(const i8 p_value) { data <<= p_value.data; }
-    func void operator>>=(const i8 p_value) { data >>= p_value.data; }
+    func void operator+=(const i8 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const i8 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const i8 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const i8 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const i8 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const i8 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const i8 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const i8 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const i8 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const i8 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const signed char p_value) { data += p_value; }
-    func void operator-=(const signed char p_value) { data -= p_value; }
-    func void operator*=(const signed char p_value) { data *= p_value; }
-    func void operator/=(const signed char p_value) { data /= p_value; }
-    func void operator%=(const signed char p_value) { data %= p_value; }
-    func void operator&=(const signed char p_value) { data &= p_value; }
-    func void operator|=(const signed char p_value) { data |= p_value; }
-    func void operator^=(const signed char p_value) { data ^= p_value; }
-    func void operator<<=(const signed char p_value) { data <<= p_value; }
-    func void operator>>=(const signed char p_value) { data >>= p_value; }
+    func void operator+=(const signed char p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const signed char p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const signed char p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const signed char p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const signed char p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const signed char p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const signed char p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const signed char p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const signed char p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const signed char p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const i8 p_value) { data = p_value.data; }
-    func void operator=(const signed char p_value) { data = p_value; }
+    func void operator=(const i8 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const signed char p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const i8 p_value) const { return data == p_value.data; }
     func bool operator!=(const i8 p_value) const { return data != p_value.data; }
@@ -439,19 +447,21 @@ struct i8 {
     func bool operator<=(const signed char p_value) const { return data <= p_value; }
 
     func signed char get_value() const { return data; }
-    func void set_value(const signed char p_value) { data = p_value; }
+    func void set_value(const signed char p_value) { if (!read_only) data = p_value; }
 };
 
 // signed short - i16
 struct i16 {
     private:
     signed short data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func i16() : data(0) {}
-    func i16(const signed short p_value) : data(p_value) {}
+    func i16() : data(0), read_only(false) {}
+    func i16(const signed short p_value) : data(p_value), read_only(false) {}
+    func i16(const signed short p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -480,35 +490,35 @@ struct i16 {
     func i16 operator-() const { return i16(-data); }
     func i16 operator~() const { return i16(~data); }
 
-    func i16 operator--() { data -= 1; return *this; }
-    func i16 operator++() { data += 1; return *this; }
-    func i16 operator--(int) { ++*this; return *this; }
-    func i16 operator++(int) { ++*this; return *this; }
+    func i16 operator--() { if (!read_only) data -= 1; return *this; }
+    func i16 operator++() { if (!read_only) data += 1; return *this; }
+    func i16 operator--(int) { if (!read_only) ++*this; return *this; }
+    func i16 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const i16 p_value) { data += p_value.data; }
-    func void operator-=(const i16 p_value) { data -= p_value.data; }
-    func void operator*=(const i16 p_value) { data *= p_value.data; }
-    func void operator/=(const i16 p_value) { data /= p_value.data; }
-    func void operator%=(const i16 p_value) { data %= p_value.data; }
-    func void operator&=(const i16 p_value) { data &= p_value.data; }
-    func void operator|=(const i16 p_value) { data |= p_value.data; }
-    func void operator^=(const i16 p_value) { data ^= p_value.data; }
-    func void operator<<=(const i16 p_value) { data <<= p_value.data; }
-    func void operator>>=(const i16 p_value) { data >>= p_value.data; }
+    func void operator+=(const i16 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const i16 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const i16 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const i16 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const i16 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const i16 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const i16 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const i16 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const i16 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const i16 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const signed short p_value) { data += p_value; }
-    func void operator-=(const signed short p_value) { data -= p_value; }
-    func void operator*=(const signed short p_value) { data *= p_value; }
-    func void operator/=(const signed short p_value) { data /= p_value; }
-    func void operator%=(const signed short p_value) { data %= p_value; }
-    func void operator&=(const signed short p_value) { data &= p_value; }
-    func void operator|=(const signed short p_value) { data |= p_value; }
-    func void operator^=(const signed short p_value) { data ^= p_value; }
-    func void operator<<=(const signed short p_value) { data <<= p_value; }
-    func void operator>>=(const signed short p_value) { data >>= p_value; }
+    func void operator+=(const signed short p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const signed short p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const signed short p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const signed short p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const signed short p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const signed short p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const signed short p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const signed short p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const signed short p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const signed short p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const i16 p_value) { data = p_value.data; }
-    func void operator=(const signed short p_value) { data = p_value; }
+    func void operator=(const i16 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const signed short p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const i16 p_value) const { return data == p_value.data; }
     func bool operator!=(const i16 p_value) const { return data != p_value.data; }
@@ -525,19 +535,21 @@ struct i16 {
     func bool operator<=(const signed short p_value) const { return data <= p_value; }
 
     func signed short get_value() const { return data; }
-    func void set_value(const signed short p_value) { data = p_value; }
+    func void set_value(const signed short p_value) { if (!read_only) data = p_value; }
 };
 
 // signed int - i32
 struct i32 {
     private:
     signed int data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func i32() : data(0) {}
-    func i32(const signed int p_value) : data(p_value) {}
+    func i32() : data(0), read_only(false) {}
+    func i32(const signed int p_value) : data(p_value), read_only(false) {}
+    func i32(const signed int p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -566,35 +578,35 @@ struct i32 {
     func i32 operator-() const { return i32(-data); }
     func i32 operator~() const { return i32(~data); }
 
-    func i32 operator--() { data -= 1; return *this; }
-    func i32 operator++() { data += 1; return *this; }
-    func i32 operator--(int) { ++*this; return *this; }
-    func i32 operator++(int) { ++*this; return *this; }
+    func i32 operator--() { if (!read_only) data -= 1; return *this; }
+    func i32 operator++() { if (!read_only) data += 1; return *this; }
+    func i32 operator--(int) { if (!read_only) ++*this; return *this; }
+    func i32 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const i32 p_value) { data += p_value.data; }
-    func void operator-=(const i32 p_value) { data -= p_value.data; }
-    func void operator*=(const i32 p_value) { data *= p_value.data; }
-    func void operator/=(const i32 p_value) { data /= p_value.data; }
-    func void operator%=(const i32 p_value) { data %= p_value.data; }
-    func void operator&=(const i32 p_value) { data &= p_value.data; }
-    func void operator|=(const i32 p_value) { data |= p_value.data; }
-    func void operator^=(const i32 p_value) { data ^= p_value.data; }
-    func void operator<<=(const i32 p_value) { data <<= p_value.data; }
-    func void operator>>=(const i32 p_value) { data >>= p_value.data; }
+    func void operator+=(const i32 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const i32 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const i32 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const i32 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const i32 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const i32 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const i32 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const i32 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const i32 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const i32 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const signed int p_value) { data += p_value; }
-    func void operator-=(const signed int p_value) { data -= p_value; }
-    func void operator*=(const signed int p_value) { data *= p_value; }
-    func void operator/=(const signed int p_value) { data /= p_value; }
-    func void operator%=(const signed int p_value) { data %= p_value; }
-    func void operator&=(const signed int p_value) { data &= p_value; }
-    func void operator|=(const signed int p_value) { data |= p_value; }
-    func void operator^=(const signed int p_value) { data ^= p_value; }
-    func void operator<<=(const signed int p_value) { data <<= p_value; }
-    func void operator>>=(const signed int p_value) { data >>= p_value; }
+    func void operator+=(const signed int p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const signed int p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const signed int p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const signed int p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const signed int p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const signed int p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const signed int p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const signed int p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const signed int p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const signed int p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const i32 p_value) { data = p_value.data; }
-    func void operator=(const signed int p_value) { data = p_value; }
+    func void operator=(const i32 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const signed int p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const i32 p_value) const { return data == p_value.data; }
     func bool operator!=(const i32 p_value) const { return data != p_value.data; }
@@ -611,19 +623,21 @@ struct i32 {
     func bool operator<=(const signed int p_value) const { return data <= p_value; }
 
     func signed int get_value() const { return data; }
-    func void set_value(const signed int p_value) { data = p_value; }
+    func void set_value(const signed int p_value) { if (!read_only) data = p_value; }
 };
 
 // signed long long - i64
 struct i64 {
     private:
     signed long long data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func i64() : data(0) {}
-    func i64(const signed long long p_value) : data(p_value) {}
+    func i64() : data(0), read_only(false) {}
+    func i64(const signed long long p_value) : data(p_value), read_only(false) {}
+    func i64(const signed long long p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -652,35 +666,35 @@ struct i64 {
     func i64 operator-() const { return i64(-data); }
     func i64 operator~() const { return i64(~data); }
 
-    func i64 operator--() { data -= 1; return *this; }
-    func i64 operator++() { data += 1; return *this; }
-    func i64 operator--(int) { ++*this; return *this; }
-    func i64 operator++(int) { ++*this; return *this; }
+    func i64 operator--() { if (!read_only) data -= 1; return *this; }
+    func i64 operator++() { if (!read_only) data += 1; return *this; }
+    func i64 operator--(int) { if (!read_only) ++*this; return *this; }
+    func i64 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const i64 p_value) { data += p_value.data; }
-    func void operator-=(const i64 p_value) { data -= p_value.data; }
-    func void operator*=(const i64 p_value) { data *= p_value.data; }
-    func void operator/=(const i64 p_value) { data /= p_value.data; }
-    func void operator%=(const i64 p_value) { data %= p_value.data; }
-    func void operator&=(const i64 p_value) { data &= p_value.data; }
-    func void operator|=(const i64 p_value) { data |= p_value.data; }
-    func void operator^=(const i64 p_value) { data ^= p_value.data; }
-    func void operator<<=(const i64 p_value) { data <<= p_value.data; }
-    func void operator>>=(const i64 p_value) { data >>= p_value.data; }
+    func void operator+=(const i64 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const i64 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const i64 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const i64 p_value) { if (!read_only) data /= p_value.data; }
+    func void operator%=(const i64 p_value) { if (!read_only) data %= p_value.data; }
+    func void operator&=(const i64 p_value) { if (!read_only) data &= p_value.data; }
+    func void operator|=(const i64 p_value) { if (!read_only) data |= p_value.data; }
+    func void operator^=(const i64 p_value) { if (!read_only) data ^= p_value.data; }
+    func void operator<<=(const i64 p_value) { if (!read_only) data <<= p_value.data; }
+    func void operator>>=(const i64 p_value) { if (!read_only) data >>= p_value.data; }
 
-    func void operator+=(const signed long long p_value) { data += p_value; }
-    func void operator-=(const signed long long p_value) { data -= p_value; }
-    func void operator*=(const signed long long p_value) { data *= p_value; }
-    func void operator/=(const signed long long p_value) { data /= p_value; }
-    func void operator%=(const signed long long p_value) { data %= p_value; }
-    func void operator&=(const signed long long p_value) { data &= p_value; }
-    func void operator|=(const signed long long p_value) { data |= p_value; }
-    func void operator^=(const signed long long p_value) { data ^= p_value; }
-    func void operator<<=(const signed long long p_value) { data <<= p_value; }
-    func void operator>>=(const signed long long p_value) { data >>= p_value; }
+    func void operator+=(const signed long long p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const signed long long p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const signed long long p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const signed long long p_value) { if (!read_only) data /= p_value; }
+    func void operator%=(const signed long long p_value) { if (!read_only) data %= p_value; }
+    func void operator&=(const signed long long p_value) { if (!read_only) data &= p_value; }
+    func void operator|=(const signed long long p_value) { if (!read_only) data |= p_value; }
+    func void operator^=(const signed long long p_value) { if (!read_only) data ^= p_value; }
+    func void operator<<=(const signed long long p_value) { if (!read_only) data <<= p_value; }
+    func void operator>>=(const signed long long p_value) { if (!read_only) data >>= p_value; }
 
-    func void operator=(const i64 p_value) { data = p_value.data; }
-    func void operator=(const signed long long p_value) { data = p_value; }
+    func void operator=(const i64 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const signed long long p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const i64 p_value) const { return data == p_value.data; }
     func bool operator!=(const i64 p_value) const { return data != p_value.data; }
@@ -697,19 +711,21 @@ struct i64 {
     func bool operator<=(const signed long long p_value) const { return data <= p_value; }
 
     func signed long long get_value() const { return data; }
-    func void set_value(const signed long long p_value) { data = p_value; }
+    func void set_value(const signed long long p_value) { if (!read_only) data = p_value; }
 };
 
 // float - f32
 struct f32 {
     private:
     float data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func f32() : data(0.0f) {}
-    func f32(const float p_value) : data(p_value) {}
+    func f32() : data(0.0f), read_only(false) {}
+    func f32(const float p_value) : data(p_value), read_only(false) {}
+    func f32(const float p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -725,23 +741,23 @@ struct f32 {
 
     func f32 operator-() const { return f32(-data); }
 
-    func f32 operator--() const { return f32(data - 1.0f); }
-    func f32 operator++() const { return f32(data + 1.0f); }
-    func f32 operator--(int) { f32 old = *this; data -= 1.0f; return old; }
-    func f32 operator++(int) { f32 old = *this; data += 1.0f; return old; }
+    func f32 operator--() { if (!read_only) data -= 1.0f; return *this; }
+    func f32 operator++() { if (!read_only) data += 1.0f; return *this; }
+    func f32 operator--(int) { if (!read_only) ++*this; return *this; }
+    func f32 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const f32 p_value) { data += p_value.data; }
-    func void operator-=(const f32 p_value) { data -= p_value.data; }
-    func void operator*=(const f32 p_value) { data *= p_value.data; }
-    func void operator/=(const f32 p_value) { data /= p_value.data; }
+    func void operator+=(const f32 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const f32 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const f32 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const f32 p_value) { if (!read_only) data /= p_value.data; }
 
-    func void operator+=(const float p_value) { data += p_value; }
-    func void operator-=(const float p_value) { data -= p_value; }
-    func void operator*=(const float p_value) { data *= p_value; }
-    func void operator/=(const float p_value) { data /= p_value; }
+    func void operator+=(const float p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const float p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const float p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const float p_value) { if (!read_only) data /= p_value; }
 
-    func void operator=(const f32 p_value) { data = p_value.data; }
-    func void operator=(const float p_value) { data = p_value; }
+    func void operator=(const f32 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const float p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const f32 p_value) const { return data == p_value.data; }
     func bool operator!=(const f32 p_value) const { return data != p_value.data; }
@@ -758,19 +774,21 @@ struct f32 {
     func bool operator<=(const float p_value) const { return data <= p_value; }
 
     func float get_value() const { return data; }
-    func void set_value(const float p_value) { data = p_value; }
+    func void set_value(const float p_value) { if (!read_only) data = p_value; }
 };
 
 // double - f64
 struct f64 {
     private:
     double data;
+    bool read_only;
 
     public:
     // Constructors - Deconstructors
 
-    func f64() : data(0.0) {}
-    func f64(const double p_value) : data(p_value) {}
+    func f64() : data(0.0), read_only(false) {}
+    func f64(const double p_value) : data(p_value), read_only(false) {}
+    func f64(const double p_value, const bool p_read_only) : data(p_value), read_only(p_read_only) {}
 
     // Operators
 
@@ -786,23 +804,23 @@ struct f64 {
 
     func f64 operator-() const { return f64(-data); }
 
-    func f64 operator--() const { return f64(data - 1.0); }
-    func f64 operator++() const { return f64(data + 1.0); }
-    func f64 operator--(int) { f64 old = *this; data -= 1.0; return old; }
-    func f64 operator++(int) { f64 old = *this; data += 1.0; return old; }
+    func f64 operator--() { if (!read_only) data -= 1.0; return *this; }
+    func f64 operator++() { if (!read_only) data += 1.0; return *this; }
+    func f64 operator--(int) { if (!read_only) ++*this; return *this; }
+    func f64 operator++(int) { if (!read_only) ++*this; return *this; }
 
-    func void operator+=(const f64 p_value) { data += p_value.data; }
-    func void operator-=(const f64 p_value) { data -= p_value.data; }
-    func void operator*=(const f64 p_value) { data *= p_value.data; }
-    func void operator/=(const f64 p_value) { data /= p_value.data; }
+    func void operator+=(const f64 p_value) { if (!read_only) data += p_value.data; }
+    func void operator-=(const f64 p_value) { if (!read_only) data -= p_value.data; }
+    func void operator*=(const f64 p_value) { if (!read_only) data *= p_value.data; }
+    func void operator/=(const f64 p_value) { if (!read_only) data /= p_value.data; }
 
-    func void operator+=(const double p_value) { data += p_value; }
-    func void operator-=(const double p_value) { data -= p_value; }
-    func void operator*=(const double p_value) { data *= p_value; }
-    func void operator/=(const double p_value) { data /= p_value; }
+    func void operator+=(const double p_value) { if (!read_only) data += p_value; }
+    func void operator-=(const double p_value) { if (!read_only) data -= p_value; }
+    func void operator*=(const double p_value) { if (!read_only) data *= p_value; }
+    func void operator/=(const double p_value) { if (!read_only) data /= p_value; }
 
-    func void operator=(const f64 p_value) { data = p_value.data; }
-    func void operator=(const double p_value) { data = p_value; }
+    func void operator=(const f64 p_value) { if (!read_only) data = p_value.data; }
+    func void operator=(const double p_value) { if (!read_only) data = p_value; }
 
     func bool operator==(const f64 p_value) const { return data == p_value.data; }
     func bool operator!=(const f64 p_value) const { return data != p_value.data; }
@@ -819,8 +837,10 @@ struct f64 {
     func bool operator<=(const double p_value) const { return data <= p_value; }
 
     func double get_value() const { return data; }
-    func void set_value(const double p_value) { data = p_value; }
+    func void set_value(const double p_value) { if (!read_only) data = p_value; }
 };
+
+
 
 // Conversions between custom types
 
