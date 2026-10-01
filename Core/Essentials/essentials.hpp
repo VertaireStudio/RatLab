@@ -10,4 +10,3 @@
 
 #include "def_configs.hpp"
 #include "platform_configs.hpp"
-#include "type_configs.hpp"

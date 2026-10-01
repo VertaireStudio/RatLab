@@ -77,19 +77,41 @@ static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTUR
 
 #if defined(__cplusplus)
     #if __cplusplus >= 202600L
-#define CPP_VERSION 26
-static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_26;
+        #define CPP_VERSION 26
+        static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_26;
     #elif __cplusplus >= 202300L
-#define CPP_VERSION 23
-static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_23;
+        #define CPP_VERSION 23
+        static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_23;
     #elif __cplusplus >= 202000L
-#define CPP_VERSION 20
-static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_20;
+        #define CPP_VERSION 20
+        static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_20;
     #elif __cplusplus >= 201700L
-#define CPP_VERSION 17
-static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_17;
+        #define CPP_VERSION 17
+        static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_17;
     #endif
 #else
-#define CPP_VERSION 0
-static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::UNKNOWN_CPP_VERSION;
+    #define CPP_VERSION 0
+    static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::UNKNOWN_CPP_VERSION;
+#endif
+
+//
+
+enum COMPILERS {
+    UNKNOWN,
+    GNUC,
+    CLANG,
+    MSVC,
+};
+
+#if defined(__GNUC__)
+    #define GNUC_ENABLED 1
+    static constexpr const COMPILERS CURRENT_COMPILER = COMPILERS::GNUC;
+#elif defined(__clang__)
+    #define CLANG_ENABLED 1
+    static constexpr const COMPILERS CURRENT_COMPILER = COMPILERS::CLANG;
+#elif defined(_MSC_VER)
+    #define MSVC_ENABLED 1
+    static constexpr const COMPILERS CURRENT_COMPILER = COMPILERS::MSVC;
+#else
+    static constexpr const COMPILERS CURRENT_COMPILER = COMPILERS::UNKNOWN;
 #endif
