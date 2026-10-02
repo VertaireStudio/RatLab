@@ -6,4 +6,5 @@
 #!/bin/bash
 find . -type f \
   -not -path './.git/*' \
+  -not -path './.cache/*' \
   > ./Misc/filelist.txt # Starting path is from the terminal's path.
