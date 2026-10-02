@@ -66,7 +66,7 @@ class Console {
 
     // Returns the singular or the plural form, depending on the given amount.
     func static const char *plural(const unsigned long long p_count, const char *p_singular,
-                                   const char *p_plural) {
+                                    const char *p_plural) {
         return p_count == 1ull ? p_singular : p_plural;
     }
     /*-------------------------------------------------------------------------------*/
@@ -146,36 +146,144 @@ class Console {
         r_buffer[written] = '\0';
     }
 
+    // Returns the divisor which brings a duration into the unit it is reported in, and the
+    // name of that unit. Both are decided by the magnitude of the value itself, so that a
+    // report stays readable whichever one of the four it happens to land on.
+    // NOTE: Not 'func' - the magnitudes are compared at runtime.
+    func static double duration_scale(const double p_ns) {
+        return p_ns < 1000.0 ? 1.0 : p_ns < 1000000.0 ? 1000.0 : p_ns < 1000000000.0 ? 1000000.0 :
+                               1000000000.0;
+    }
+
+    // Returns the name of the unit a duration of the given size is reported in.
+    // NOTE: Not 'func' - the magnitudes are compared at runtime.
+    func static const char *duration_unit(const double p_ns) {
+        return p_ns < 1000.0 ? "ns" : p_ns < 1000000.0 ? "us" :
+               p_ns < 1000000000.0 ? "ms" : "s";
+    }
+
+    // Returns the divisor which brings an amount per second into the unit it is reported in.
+    // NOTE: Not 'func' - the magnitudes are compared at runtime.
+    func static double rate_scale(const double p_rate) {
+        return p_rate < 1000.0 ? 1.0 : p_rate < 1000000.0 ? 1000.0 :
+               p_rate < 1000000000.0 ? 1000000.0 : p_rate < 1000000000000.0 ? 1000000000.0 :
+                                                                             1000000000000.0;
+    }
+
+    // Returns the magnitude prefix of the unit an amount per second is reported in.
+    // NOTE: Not 'func' - the magnitudes are compared at runtime.
+    func static char rate_prefix(const double p_rate) {
+        return p_rate < 1000.0 ? ' ' : p_rate < 1000000.0 ? 'K' : p_rate < 1000000000.0 ? 'M' :
+               p_rate < 1000000000000.0 ? 'G' : 'T';
+    }
+
     // Writes a duration given in nanoseconds using the unit which keeps it readable,
-    // e.g. 12594000 becomes '12.594 ms'.
+    // e.g. 12594000 becomes '12.594 ms'. A single nanosecond is the only magnitude left as a
+    // whole number: it has three decimals more than anyone reads off a duration.
     // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
     static void format_duration(char *r_buffer, const std::size_t p_size, const double p_ns) {
-        if (p_ns < 1000.0) {
+        const double scale = duration_scale(p_ns);
+        if (scale == 1.0) {
             std::snprintf(r_buffer, p_size, "%.0f ns", p_ns);
-        } else if (p_ns < 1000000.0) {
-            std::snprintf(r_buffer, p_size, "%.3f us", p_ns / 1000.0);
-        } else if (p_ns < 1000000000.0) {
-            std::snprintf(r_buffer, p_size, "%.3f ms", p_ns / 1000000.0);
         } else {
-            std::snprintf(r_buffer, p_size, "%.3f s", p_ns / 1000000000.0);
+            std::snprintf(r_buffer, p_size, "%.3f %s", p_ns / scale, duration_unit(p_ns));
         }
+    }
+
+    // Writes a duration given in nanoseconds with four decimals at every magnitude, e.g.
+    // 1.9098 ns. A benchmark measured in fractions of a nanosecond is rounded away to nothing
+    // by the plain one, which is why the samples and the summary of a run use this.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_duration_precise(char *r_buffer, const std::size_t p_size,
+                                        const double p_ns) {
+        const double scale = duration_scale(p_ns);
+        std::snprintf(r_buffer, p_size, "%.4f %s", p_ns / scale, duration_unit(p_ns));
+    }
+
+    // Writes a '[lower typical upper]' interval of durations given in nanoseconds, e.g.
+    // '[12.5939 ms 12.5940 ms 12.5941 ms]'. All three are written in the unit of the typical
+    // value, so that the bounds stay readable next to each other even when they happen to
+    // sit on either side of a unit change.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_duration_interval(char *r_buffer, const std::size_t p_size,
+                                         const double p_lower, const double p_typical,
+                                         const double p_upper) {
+        const double scale = duration_scale(p_typical);
+        const char *unit = duration_unit(p_typical);
+        std::snprintf(r_buffer, p_size, "[%.4f %s %.4f %s %.4f %s]", p_lower / scale, unit,
+                      p_typical / scale, unit, p_upper / scale, unit);
+    }
+
+    // Writes an amount per second using a magnitude prefix and the name of what is counted,
+    // e.g. 7135613856 becomes '7.14 Gelem/s' for the unit 'elem', and '7.14 G/s' without one.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_throughput(char *r_buffer, const std::size_t p_size, const double p_rate,
+                                  const char *p_unit) {
+        const double scale = rate_scale(p_rate);
+        if (scale == 1.0) {
+            std::snprintf(r_buffer, p_size, "%.0f %s/s", p_rate, p_unit);
+        } else {
+            std::snprintf(r_buffer, p_size, "%.2f %c%s/s", p_rate / scale, rate_prefix(p_rate),
+                          p_unit);
+        }
+    }
+
+    // Writes a '[lower typical upper]' interval of amounts per second, e.g.
+    // '[524.00 Melem/s 523.71 Melem/s 523.21 Melem/s]'. All three are written in the unit of the
+    // typical value, the way the durations of an interval are.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_throughput_interval(char *r_buffer, const std::size_t p_size,
+                                           const double p_lower, const double p_typical,
+                                           const double p_upper, const char *p_unit) {
+        const double scale = rate_scale(p_typical);
+        if (scale == 1.0) {
+            std::snprintf(r_buffer, p_size, "[%.0f %s/s %.0f %s/s %.0f %s/s]", p_lower, p_unit,
+                          p_typical, p_unit, p_upper, p_unit);
+            return;
+        }
+        const char prefix = rate_prefix(p_typical);
+        std::snprintf(r_buffer, p_size, "[%.2f %c%s/s %.2f %c%s/s %.2f %c%s/s]", p_lower / scale,
+                      prefix, p_unit, p_typical / scale, prefix, p_unit, p_upper / scale, prefix,
+                      p_unit);
+    }
+
+    // Writes an amount per second of the given cost: what one iteration of the given amount
+    // produced costs per second. The cost is given in nanoseconds, so it is turned into
+    // seconds before the two are divided.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_rate_of(char *r_buffer, const std::size_t p_size, const double p_ns,
+                               const unsigned long long p_amount, const char *p_unit) {
+        format_throughput(r_buffer, p_size, p_ns > 0.0 ? static_cast<double>(p_amount) * 1000000000.0 / p_ns : 0.0,
+                          p_unit);
     }
 
     // Writes an amount of iterations per second using a magnitude prefix,
     // e.g. 7135613856 becomes '7.14 G/s'.
     // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
     static void format_rate(char *r_buffer, const std::size_t p_size, const double p_rate) {
-        if (p_rate < 1000.0) {
-            std::snprintf(r_buffer, p_size, "%.0f /s", p_rate);
-        } else if (p_rate < 1000000.0) {
-            std::snprintf(r_buffer, p_size, "%.2f K/s", p_rate / 1000.0);
-        } else if (p_rate < 1000000000.0) {
-            std::snprintf(r_buffer, p_size, "%.2f M/s", p_rate / 1000000.0);
-        } else if (p_rate < 1000000000000.0) {
-            std::snprintf(r_buffer, p_size, "%.2f G/s", p_rate / 1000000000.0);
-        } else {
-            std::snprintf(r_buffer, p_size, "%.2f T/s", p_rate / 1000000000000.0);
+        format_throughput(r_buffer, p_size, p_rate, "");
+    }
+
+    // Writes a relative change as a signed percentage, e.g. -0.0772 becomes '-7.72%'.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_change(char *r_buffer, const std::size_t p_size, const double p_fraction) {
+        std::snprintf(r_buffer, p_size, "%+.2f%%", p_fraction * 100.0);
+    }
+
+    // Writes a probability in the form a comparison reports it in, e.g. 0.0314 becomes
+    // '0.0314'. Four decimals are what keeps a probability which is not close to the
+    // significance level from reading as a tie.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    static void format_probability(char *r_buffer, const std::size_t p_size,
+                                   const double p_probability) {
+        // A probability below what the given precision can hold is written as a bound rather
+        // than as the zero it rounds to: 'p = 0.0000' reads as a broken run rather than as the
+        // strongest result a comparison of this kind can produce.
+        if (p_probability < 0.00005) {
+            std::snprintf(r_buffer, p_size, "<0.0001");
+            return;
         }
+        std::snprintf(r_buffer, p_size, "%.4f", p_probability);
     }
 
     // Writes a string such as '12 checks' or '1 check', right aligned in the given width.

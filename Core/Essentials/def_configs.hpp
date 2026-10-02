@@ -50,18 +50,9 @@
     #define no_inline
 #endif
 
-// Toggling whether the entire workspace will be compiled with 'consteval' instead of 'constexpr'.
-#ifdef CONSTEVAL_ENABLED
-    #undef CONSTEVAL_ENABLED
-#endif
-
-#define CONSTEVAL_ENABLED 0
-
-// Will apply either 'constexpr' or 'consteval' depending on the use case.
-// NOTE: 'constexpr' and 'consteval' is best used above C++17, otherwise no compile-time evaluation will happen.
-#if CONSTEVAL_ENABLED
-    #define func consteval
-#elif CPP_VERSION >= 17
+// Will apply either 'constexpr' or nothing depending on the use case.
+// NOTE: 'constexpr' is best used above C++17.
+#if CPP_VERSION >= 17
     #define func constexpr
 #else
     #define func

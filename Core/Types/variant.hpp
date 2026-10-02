@@ -41,7 +41,7 @@ class Variant {
         RECT2I,
     };
     // Specifies different access permissions for both the Variant and other types extending from Variant.
-    enum Accessability {
+    enum Accessability : unsigned char {
         ReadOnly, // Can read, but not write. Access can be changed.
         WriteOnly, // Can write, but not read. Access can be changed.
         ReadAndWrite, // Can read and write. Access can be changed.
@@ -62,26 +62,26 @@ class Variant {
     /*--------------------------------------------------------------------------------------------------------------*/
 
     // Returns whether the Variant is read-only.
-    func bool is_read_only() const { return access == Accessability::ReadOnly; }
+    func bool is_read_only() const noexcept { return access == Accessability::ReadOnly; }
     // Returns whether the Variant is write-only.
-    func bool is_write_only() const { return access == Accessability::WriteOnly; }
+    func bool is_write_only() const noexcept { return access == Accessability::WriteOnly; }
     // Returns whether the Variant is read-and-write.
-    func bool is_read_and_write() const { return access == Accessability::ReadAndWrite; }
+    func bool is_read_and_write() const noexcept { return access == Accessability::ReadAndWrite; }
     // Returns whether the Variant is aggressive (read-only).
     // Access cannot be overriden.
-    func bool is_aggressive() const { return access == Accessability::Agressive; }
+    func bool is_aggressive() const noexcept { return access == Accessability::Agressive; }
     // Returns whether the Variant is neutral (write-only).
     // Access cannot be overriden.
-    func bool is_neutral() const { return access == Accessability::Neutral; }
+    func bool is_neutral() const noexcept { return access == Accessability::Neutral; }
     // Returns whether the Variant is passive (read-and-write).
     // Access cannot be overriden.
-    func bool is_passive() const { return access == Accessability::Passive; }
+    func bool is_passive() const noexcept { return access == Accessability::Passive; }
     // Returns whether the Variant can be read, regardless of access.
-    func bool can_read() const { return !is_write_only() || !is_neutral() ; }
+    func bool can_read() const noexcept { return !is_write_only() || !is_neutral() ; }
     // Returns whether the Variant can be written, regardless of access.
-    func bool can_write() const { return !is_read_only() || !is_aggressive(); }
+    func bool can_write() const noexcept { return !is_read_only() || !is_aggressive(); }
     // Returns whether the Variant can overwrite access.
-    func bool can_overwrite_access() const { return !is_aggressive() || !is_neutral() || !is_passive(); }
+    func bool can_overwrite_access() const noexcept { return !is_aggressive() || !is_neutral() || !is_passive(); }
     /*--------------------------------------------------------------------------------------------------------*/
 
     // Returns the value of the type which inherits from this Variant.
@@ -90,13 +90,13 @@ class Variant {
     func T get() const;
 
     // Returns the type of the value stored in this Variant.
-    static func Types get_type() { return Types::VARIANT; }
+    static func Types get_type() noexcept { return Types::VARIANT; }
     /*---------------------*/
 
     // Returns whether this Variant is equal to the specified Variant.
     template<typename T>
-    func bool operator==(const Variant &other) const { return get<T>() == other.get<T>(); }
+    func bool operator==(const Variant &other) const noexcept { return get<T>() == other.get<T>(); }
     // Returns whether this Variant is not equal to the specified Variant.
     template<typename T>
-    func bool operator!=(const Variant &other) const { return get<T>() != other.get<T>(); }
+    func bool operator!=(const Variant &other) const noexcept { return get<T>() != other.get<T>(); }
 };

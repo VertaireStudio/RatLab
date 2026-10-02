@@ -31,143 +31,186 @@ class u8 : public Variant {
     // Constructor with an unsigned char value and read-only flag.
     // If the access is aggressive, neutral, or passive: the access will be permanently set, until freed from memory.
     func u8(unsigned char p_value, Accessability p_access) : value(p_value) { access = p_access; }
-    /*--------------------------------------------------------------------------------------------------------------*/
+    /*------------------------------------------------------------------------------------------------------------------*/
+
+    // Divides two unsigned char values through a single-precision divide and truncates towards zero.
+    static func unsigned char divide(const unsigned char p_dividend, const unsigned char p_divisor) {
+        return static_cast<unsigned char>(
+            static_cast<int>(static_cast<float>(p_dividend) / static_cast<float>(p_divisor)));
+    }
+
+    // Divides two unsigned char values, returning the maximum value instead of dividing by zero.
+    static func u8 divide_guarded(const unsigned char p_dividend, const unsigned char p_divisor) noexcept {
+        return p_divisor == 0 ? u8(MAX_VALUE) : u8(divide(p_dividend, p_divisor));
+    }
+
+    // Takes the remainder of two 8-bit values, where a guarded division is utilized.
+    static func u8 modulo(const unsigned char p_dividend, const unsigned char p_divisor) noexcept {
+        return u8(static_cast<unsigned char>(p_dividend - divide_guarded(p_dividend, p_divisor).get() * p_divisor));
+    }
+    /*--------------------------------------------------------------------------------------------------------------------------*/
 
     // Returns the original value (unsigned char) of the u8 type.
     // If the u8 type is write-only or neutral, returns 0.
-    func unsigned char get() const { return can_read() ? value : 0; }
+    func unsigned char get() const noexcept { return can_read() ? value : 0; }
     // Returns the type of the value stored in this Variant.
-    static func Variant::Types get_type() { return Variant::Types::U8; }
+    static func Variant::Types get_type() noexcept { return Variant::Types::U8; }
     // Sets the value of the u8 type with the given unsigned char value.
     // If the u8 type is read-only or aggressive, the value will not be set.
-    func void set(unsigned char p_value) { if (can_write()) value = p_value; }
+    func void set(unsigned char p_value) noexcept { if (can_write()) value = p_value; }
     // Sets the value of the u8 type with the given u8 value.
     // If the u8 type (which is being set from) is read-only or aggressive, the value will not be set.
     // If the u8 type (from the parameter) is write-only or neutral, the value will not be set.
-    func void set(const u8 &p_other) { if (can_write() && p_other.can_read()) value = p_other.get(); }
+    func void set(const u8 &p_other) noexcept { if (can_write() && p_other.can_read()) value = p_other.get(); }
     // Sets the accessibility of the u8 type.
     // If the u8 type is aggressive, neutral, or passive: the access will NOT be overriden, until freed from memory.
-    func void set_access(Accessability p_access) { if (can_overwrite_access()) access = p_access; }
+    func void set_access(Accessability p_access) noexcept { if (can_overwrite_access()) access = p_access; }
     /*--------------------------------------------------------------------------------------------------------------*/
 
     // Returns the result of adding two u8 values together.
-    func u8 operator+(const u8 &p_other) const { return u8(get() + p_other.get()); }
+    func u8 operator+(const u8 &p_other) const noexcept { return u8(get() + p_other.get()); }
     // Returns the result of subtracting one u8 value from another.
-    func u8 operator-(const u8 &p_other) const { return u8(get() - p_other.get()); }
+    func u8 operator-(const u8 &p_other) const noexcept { return u8(get() - p_other.get()); }
     // Returns the result of multiplying two u8 values together.
-    func u8 operator*(const u8 &p_other) const { return u8(get() * p_other.get()); }
+    func u8 operator*(const u8 &p_other) const noexcept { return u8(get() * p_other.get()); }
     // Returns the result of dividing one u8 value by another. (avoids division by zero)
-    func u8 operator/(const u8 &p_other) const { return p_other.get() == 0 ? u8(MAX_VALUE) : u8(get() / p_other.get()); }
+    func u8 operator/(const u8 &p_other) const noexcept { return divide_guarded(get(), p_other.get()); }
     // Returns the result of modulo operation on two u8 values.
-    func u8 operator%(const u8 &p_other) const { return u8(get() % p_other.get()); }
+    func u8 operator%(const u8 &p_other) const noexcept { return modulo(get(), p_other.get()); }
     // Returns the result of bitwise AND operation on two u8 values.
-    func u8 operator&(const u8 &p_other) const { return u8(get() & p_other.get()); }
+    func u8 operator&(const u8 &p_other) const noexcept { return u8(get() & p_other.get()); }
     // Returns the result of bitwise OR operation on two u8 values.
-    func u8 operator|(const u8 &p_other) const { return u8(get() | p_other.get()); }
+    func u8 operator|(const u8 &p_other) const noexcept { return u8(get() | p_other.get()); }
     // Returns the result of bitwise XOR operation on two u8 values.
-    func u8 operator^(const u8 &p_other) const { return u8(get() ^ p_other.get()); }
+    func u8 operator^(const u8 &p_other) const noexcept { return u8(get() ^ p_other.get()); }
 
     // Returns the result of adding with an unsigned char value.
-    func u8 operator+(unsigned char p_value) const { return u8(get() + p_value); }
+    func u8 operator+(unsigned char p_value) const noexcept { return u8(get() + p_value); }
     // Returns the result of subtracting with an unsigned char value.
-    func u8 operator-(unsigned char p_value) const { return u8(get() - p_value); }
+    func u8 operator-(unsigned char p_value) const noexcept { return u8(get() - p_value); }
     // Returns the result of multiplying with an unsigned char value.
-    func u8 operator*(unsigned char p_value) const { return u8(get() * p_value); }
+    func u8 operator*(unsigned char p_value) const noexcept { return u8(get() * p_value); }
     // Returns the result of dividing with an unsigned char value. (avoids division by zero)
-    func u8 operator/(unsigned char p_value) const { return p_value == 0 ? u8(MAX_VALUE) : u8(get() / p_value); }
+    func u8 operator/(unsigned char p_value) const noexcept { return divide_guarded(get(), p_value); }
     // Returns the result of modulo operation with an unsigned char value.
-    func u8 operator%(unsigned char p_value) const { return u8(get() % p_value); }
+    func u8 operator%(unsigned char p_value) const noexcept { return modulo(get(), p_value); }
 
     // Adds two u8 values together.
-    func u8 operator+=(const u8 &p_other) { return u8(get() + p_other.get()); }
+    func u8 operator+=(const u8 &p_other) noexcept { return u8(get() + p_other.get()); }
     // Subtracts one u8 value from another.
-    func u8 operator-=(const u8 &p_other) { return u8(get() - p_other.get()); }
+    func u8 operator-=(const u8 &p_other) noexcept { return u8(get() - p_other.get()); }
     // Multiplies two u8 values together.
-    func u8 operator*=(const u8 &p_other) { return u8(get() * p_other.get()); }
+    func u8 operator*=(const u8 &p_other) noexcept { return u8(get() * p_other.get()); }
     // Divides one u8 value by another. (avoids division by zero)
-    func u8 operator/=(const u8 &p_other) { return p_other.get() == 0 ? u8(MAX_VALUE) : u8(get() / p_other.get()); }
+    func u8 operator/=(const u8 &p_other) noexcept { return divide_guarded(get(), p_other.get()); }
     // Modulo operation with an u8 value.
-    func u8 operator%=(const u8 &p_other) { return u8(get() % p_other.get()); }
+    func u8 operator%=(const u8 &p_other) noexcept { return modulo(get(), p_other.get()); }
 
     // Adds with an unsigned char value.
-    func u8 operator+=(unsigned char p_value) { return u8(get() + p_value); }
+    func u8 operator+=(unsigned char p_value) noexcept { return u8(get() + p_value); }
     // Subtracts an unsigned char value.
-    func u8 operator-=(unsigned char p_value) { return u8(get() - p_value); }
+    func u8 operator-=(unsigned char p_value) noexcept { return u8(get() - p_value); }
     // Multiplies an u8 value by an unsigned char.
-    func u8 operator*=(unsigned char p_value) { return u8(get() * p_value); }
+    func u8 operator*=(unsigned char p_value) noexcept { return u8(get() * p_value); }
     // Divides an u8 value by an unsigned char. (avoids division by zero)
-    func u8 operator/=(unsigned char p_value) { return p_value == 0 ? u8(MAX_VALUE) : u8(get() / p_value); }
+    func u8 operator/=(unsigned char p_value) noexcept { return divide_guarded(get(), p_value); }
     // Modulo operation with an unsigned char value.
-    func u8 operator%=(unsigned char p_value) { return u8(get() % p_value); }
+    func u8 operator%=(unsigned char p_value) noexcept { return modulo(get(), p_value); }
 
     // Negates a u8 value.
-    func u8 operator-() const { return u8(-get()); }
+    func u8 operator-() const noexcept { return u8(-get()); }
     // Bitwise NOT operation on a u8 value.
-    func u8 operator~() const { return u8(~get()); }
+    func u8 operator~() const noexcept { return u8(~get()); }
 
     // Left shift operation on an u8 value.
-    func u8 operator<<(const u8 &p_value) const { return u8(get() << p_value.get()); }
+    func u8 operator<<(const u8 &p_value) const noexcept { return u8(get() << p_value.get()); }
     // Right shift operation on an u8 value.
-    func u8 operator>>(const u8 &p_value) const { return u8(get() >> p_value.get()); }
+    func u8 operator>>(const u8 &p_value) const noexcept { return u8(get() >> p_value.get()); }
     // Left shift operation on an u8 value.
-    func u8 operator<<(unsigned char p_value) const { return u8(get() << p_value); }
+    func u8 operator<<(unsigned char p_value) const noexcept { return u8(get() << p_value); }
     // Right shift operation on an u8 value.
-    func u8 operator>>(unsigned char p_value) const { return u8(get() >> p_value); }
+    func u8 operator>>(unsigned char p_value) const noexcept { return u8(get() >> p_value); }
 
     // Pre-increment operator.
-    func u8 operator++() { if (can_write()) set(get() + 1); return can_read() ? *this : u8(0); }
+    func u8 operator++() noexcept { if (can_write()) set(get() + 1); return can_read() ? *this : u8(0); }
     // Post-increment operator.
-    func u8 operator++(int) { if (can_write()) set(get() + 1); return can_read() ? *this : u8(0); }
+    func u8 operator++(int) noexcept { if (can_write()) set(get() + 1); return can_read() ? *this : u8(0); }
     // Pre-decrement operator.
-    func u8 operator--() { if (can_write()) set(get() - 1); return can_read() ? *this : u8(0); }
+    func u8 operator--() noexcept { if (can_write()) set(get() - 1); return can_read() ? *this : u8(0); }
     // Post-decrement operator.
-    func u8 operator--(int) { if (can_write()) set(get() - 1); return can_read() ? *this : u8(0); }
+    func u8 operator--(int) noexcept { if (can_write()) set(get() - 1); return can_read() ? *this : u8(0); }
 
     // Equality operator with another u8 value.
-    func bool operator==(const u8 &p_other) const { return get() == p_other.get(); }
+    func bool operator==(const u8 &p_other) const noexcept { return get() == p_other.get(); }
     // Inequality operator with another u8 value.
-    func bool operator!=(const u8 &p_other) const { return get() != p_other.get(); }
+    func bool operator!=(const u8 &p_other) const noexcept { return get() != p_other.get(); }
     // Less than operator with another u8 value.
-    func bool operator<(const u8 &p_other) const { return get() < p_other.get(); }
+    func bool operator<(const u8 &p_other) const noexcept { return get() < p_other.get(); }
     // Greater than operator with another u8 value.
-    func bool operator>(const u8 &p_other) const { return get() > p_other.get(); }
+    func bool operator>(const u8 &p_other) const noexcept { return get() > p_other.get(); }
     // Less than or equal operator with another u8 value.
-    func bool operator<=(const u8 &p_other) const { return get() <= p_other.get(); }
+    func bool operator<=(const u8 &p_other) const noexcept { return get() <= p_other.get(); }
     // Greater than or equal operator with another u8 value.
-    func bool operator>=(const u8 &p_other) const { return get() >= p_other.get(); }
+    func bool operator>=(const u8 &p_other) const noexcept { return get() >= p_other.get(); }
 
     // Equality operator with an unsigned char value.
-    func bool operator==(unsigned char p_other) const { return get() == p_other; }
+    func bool operator==(unsigned char p_other) const noexcept { return get() == p_other; }
     // Inequality operator with an unsigned char value.
-    func bool operator!=(unsigned char p_other) const { return get() != p_other; }
+    func bool operator!=(unsigned char p_other) const noexcept { return get() != p_other; }
     // Less than operator with an unsigned char value.
-    func bool operator<(unsigned char p_other) const { return get() < p_other; }
+    func bool operator<(unsigned char p_other) const noexcept { return get() < p_other; }
     // Greater than operator with an unsigned char value.
-    func bool operator>(unsigned char p_other) const { return get() > p_other; }
+    func bool operator>(unsigned char p_other) const noexcept { return get() > p_other; }
     // Less than or equal operator with an unsigned char value.
-    func bool operator<=(unsigned char p_other) const { return get() <= p_other; }
+    func bool operator<=(unsigned char p_other) const noexcept { return get() <= p_other; }
     // Greater than or equal operator with an unsigned char value.
-    func bool operator>=(unsigned char p_other) const { return get() >= p_other; }
+    func bool operator>=(unsigned char p_other) const noexcept { return get() >= p_other; }
     /*-------------------------------------------------------------------------------*/
 
     // Returns the lower value between two u8 values.
     // Returns 0 if the value cannot be read.
-    func u8 min(const u8 &p_other) const { return !can_read() ? u8(0) : (get() < p_other.get() ? u8(get()) : u8(p_other.get())); }
+    func u8 min(const u8 &p_other) const noexcept {
+        if (!can_read()) return u8(0);
+        const unsigned char self = get(), other = p_other.get();
+        return self < other ? u8(self) : u8(other);
+    }
     // Returns the lower value between an u8 value and an unsigned char.
     // Returns 0 if the value cannot be read.
-    func u8 min(unsigned char p_value) const { return !can_read() ? u8(0) : (get() < p_value ? u8(get()) : u8(p_value)); }
+    func u8 min(unsigned char p_value) const noexcept {
+        if (!can_read()) return u8(0);
+        const unsigned char self = get();
+        return self < p_value ? u8(self) : u8(p_value);
+    }
 
     // Returns the higher value between two u8 values.
     // Returns 0 if the value cannot be read.
-    func u8 max(const u8 &p_other) const { return !can_read() ? u8(0) : (get() > p_other.get() ? u8(get()) : u8(p_other.get())); }
+    func u8 max(const u8 &p_other) const noexcept {
+        if (!can_read()) return u8(0);
+        const unsigned char self = get(), other = p_other.get();
+        return self > other ? u8(self) : u8(other);
+    }
     // Returns the higher value between an u8 value and an unsigned char.
     // Returns 0 if the value cannot be read.
-    func u8 max(unsigned char p_value) const { return !can_read() ? u8(0) : (get() > p_value ? u8(get()) : u8(p_value)); }
+    func u8 max(unsigned char p_value) const noexcept {
+        if (!can_read()) return u8(0);
+        const unsigned char self = get();
+        return self > p_value ? u8(self) : u8(p_value);
+    }
 
     // Returns the clamped value between two u8 values.
     // Returns 0 if the value cannot be read.
-    func u8 clamp(const u8 &p_min, const u8 &p_max) const { return !can_read() ? u8(0) : (min(p_min).max(p_max)); }
+    func u8 clamp(const u8 &p_min, const u8 &p_max) const noexcept {
+        if (!can_read()) return u8(0);
+        const unsigned char self = get(), lower = p_min.get(), upper = p_max.get();
+        const unsigned char clamped = self < lower ? self : lower;
+        return u8(clamped > upper ? clamped : upper);
+    }
     // Returns the clamped value between an u8 value and an unsigned char.
     // Returns 0 if the value cannot be read.
-    func u8 clamp(unsigned char p_min, unsigned char p_max) const { return !can_read() ? u8(0) : (min(p_min).max(p_max)); }
+    func u8 clamp(unsigned char p_min, unsigned char p_max) const noexcept {
+        if (!can_read()) return u8(0);
+        const unsigned char self = get();
+        const unsigned char clamped = self < p_min ? self : p_min;
+        return u8(clamped > p_max ? clamped : p_max);
+    }
 };
