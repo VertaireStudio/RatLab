@@ -8,8 +8,9 @@
 
 #pragma once
 
-#include "../Essentials/essentials.hpp"
+#include "console.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdio>
@@ -17,14 +18,6 @@
 #include <cstring>
 #include <string>
 #include <vector>
-
-#if defined(_WIN32)
-    #include <io.h>
-    #define BENCHMARKER_ISATTY(stream) (_isatty(_fileno(stream)) != 0)
-#else
-    #include <unistd.h>
-    #define BENCHMARKER_ISATTY(stream) (::isatty(::fileno(stream)) != 0)
-#endif
 
 // The Benchmarker type: A self-contained, dependency-free benchmark framework for RatLab.
 // Benchmark bodies are registered at runtime (or at static-initialization time) and are executed
@@ -82,28 +75,19 @@ class Benchmarker {
         return compiled;
     }
 
+    // The shared output plumbing.
+    Console console;
+
     // The minimum amount of time (in milliseconds) a single sample has to take by default.
     static constexpr const double DEFAULT_MIN_TIME_MS = 25.0;
     // The hard upper limit for the calibrated iteration count, guarding against pathological bodies.
     static constexpr const unsigned long long MAX_ITERATIONS = 1ull << 32;
     // The amount of samples taken per benchmark; the fastest one is reported.
     static constexpr const unsigned long long DEFAULT_SAMPLES = 3ull;
-    /*-------------------------------------------------------------------------------*/
-
-    // ── Colors ──────────────────────────────────────────────────────────────────────────────
-
-    func static const char *bold() { return "\x1b[1m"; }
-    func static const char *dim() { return "\x1b[2m"; }
-    func static const char *red() { return "\x1b[31m"; }
-    func static const char *green() { return "\x1b[32m"; }
-    func static const char *yellow() { return "\x1b[33m"; }
-    func static const char *cyan() { return "\x1b[36m"; }
-    func static const char *reset() { return "\x1b[0m"; }
-
-    // Colors are stripped entirely when stdout is not a terminal (CI logs stay plain).
-    func static const char *paint(const bool p_use_color, const char *p_code) {
-        return p_use_color ? p_code : "";
-    }
+    // The width of the report, used to draw the rules and to align the columns.
+    static constexpr const std::size_t REPORT_WIDTH = 74;
+    // The longest name which is allowed to widen the name column.
+    static constexpr const std::size_t MAX_NAME_WIDTH = 34;
     /*-------------------------------------------------------------------------------*/
 
     // ── Measurement ─────────────────────────────────────────────────────────────────────────
@@ -120,8 +104,6 @@ class Benchmarker {
     static void clobber_memory() {
 #if defined(GNUC_ENABLED) || defined(CLANG_ENABLED)
         asm volatile("" : : : "memory");
-#elif defined(MSVC_ENABLED)
-        std::atomic_thread_fence(std::memory_order_seq_cst);
 #else
         std::atomic_signal_fence(std::memory_order_seq_cst);
 #endif
@@ -158,7 +140,7 @@ class Benchmarker {
         return iterations;
     }
 
-    // Runs a single benchmark to completion and stores its result.
+    // Runs a single benchmark to completion and returns its result.
     // NOTE: Not 'func' - benchmarks are performed at runtime.
     static BenchResult run_entry(const BenchEntry &p_entry, const unsigned long long p_samples) {
         const unsigned long long iterations = calibrate(p_entry);
@@ -284,30 +266,53 @@ class Benchmarker {
 
     // ── Execution ───────────────────────────────────────────────────────────────────────────
 
-    // Prints every registered benchmark which matches the given filter.
+    // Prints every registered benchmark which matches the given filter, one per line.
     static void list(const std::string &p_filter = std::string()) {
-        std::printf("Registered benchmarks: %llu\n", (unsigned long long)registry().size());
+        Console console;
+        std::size_t shown = 0;
         for (const BenchEntry &entry : registry()) {
             if (matches(entry.name, p_filter)) {
-                std::printf("  %s (min time %.1f ms)\n", entry.name, entry.min_time_ms);
+                ++shown;
+            }
+        }
+
+        std::printf("%s%s%llu benchmarks%s\n", console.paint(Console::bold()),
+                    console.paint(Console::cyan()), (unsigned long long)shown,
+                    console.paint(Console::reset()));
+        for (const BenchEntry &entry : registry()) {
+            if (matches(entry.name, p_filter)) {
+                std::printf("  %s\n", entry.name);
             }
         }
     }
 
-    // Runs every registered benchmark which matches the given filter, prints the result
-    // table and returns 0. Benchmarks never 'fail', so the return value only reports
-    // whether at least one benchmark was actually run.
-    // 'p_min_time_ms' overrides the minimum sample duration of every benchmark.
-    // NOTE: Not 'func' - benchmarks are performed at runtime.
+    // Returns the width of the name column, so that every benchmark lines up.
+    static std::size_t measure_name_width(const std::string &p_filter) {
+        std::size_t width = 0;
+        for (const BenchEntry &entry : registry()) {
+            if (!matches(entry.name, p_filter)) {
+                continue;
+            }
+            const std::size_t length = std::strlen(entry.name);
+            if (length > width) {
+                width = length;
+            }
+        }
+        return width < MAX_NAME_WIDTH ? width : MAX_NAME_WIDTH;
+    }
+
+    // Prints the result table, sorted from the fastest to the slowest benchmark, followed by
+    // the summary of the run.
+    // NOTE: Not 'func' - the report is a runtime-only operation.
     int run(const std::string &p_filter = std::string(),
             const double p_min_time_ms = DEFAULT_MIN_TIME_MS) {
-        const bool use_color = BENCHMARKER_ISATTY(stdout);
-        std::size_t executed = 0;
+        const std::size_t name_width = measure_name_width(p_filter);
+        const double start_ns = now_ns();
 
-        std::printf("%s%-34s %14s %12s %12s %14s%s\n",
-                    paint(use_color, bold()), "Benchmark", "Iterations", "Total (ms)",
-                    "ns/iter", "Iter/s", paint(use_color, reset()));
-        std::printf("--------------------------------------------------------------\n");
+        std::printf("%s%sRatLab benchmarks%s  %s%s%s%s\n", console.paint(Console::bold()),
+                    console.paint(Console::cyan()), console.paint(Console::reset()),
+                    console.separator(), Console::platform_name(), console.separator(),
+                    Console::cpp_standard_name());
 
         results().clear();
         for (const BenchEntry &entry : registry()) {
@@ -316,25 +321,52 @@ class Benchmarker {
             }
             BenchEntry effective = entry;
             effective.min_time_ms = p_min_time_ms;
-            const BenchResult result = run_entry(effective, DEFAULT_SAMPLES);
-            results().push_back(result);
-            std::printf("%-34s %14llu %12.3f %12.4f %14.0f\n", result.name, result.iterations,
-                        result.total_ns / 1000000.0, result.ns_per_iteration,
-                        result.iterations_per_second);
-            std::fflush(stdout);
-            ++executed;
+            results().push_back(run_entry(effective, DEFAULT_SAMPLES));
+        }
+        const double total_ns = now_ns() - start_ns;
+
+        // The fastest benchmark ends up on top, which is the one worth looking at first.
+        std::sort(results().begin(), results().end(),
+                  [](const BenchResult &p_a, const BenchResult &p_b) {
+                      return p_a.ns_per_iteration < p_b.ns_per_iteration;
+                  });
+
+        if (results().empty()) {
+            std::printf("\n  %sno benchmark matched the filter%s\n",
+                        console.paint(Console::yellow()), console.paint(Console::reset()));
+            return 1;
         }
 
-        std::printf("--------------------------------------------------------------\n");
-        print_summary(use_color, p_min_time_ms, executed);
-        return executed > 0 ? 0 : 1;
+        std::printf("\n  %s%-*s  %15s  %10s  %10s%s\n", console.paint(Console::dim()),
+                    (int)name_width, "benchmark", "iterations", "ns/iter", "iter/s",
+                    console.paint(Console::reset()));
+
+        unsigned long long rank = 0;
+        for (const BenchResult &result : results()) {
+            ++rank;
+            char buffer_iterations[24];
+            char buffer_rate[32];
+            Console::format_count(buffer_iterations, sizeof(buffer_iterations), result.iterations);
+            Console::format_rate(buffer_rate, sizeof(buffer_rate), result.iterations_per_second);
+
+            // The time per iteration stays a plain number of nanoseconds: it is the column
+            // every result gets compared by, and magnitude prefixes would only hide it.
+            std::printf("  %s%2llu%s  %-*s  %15s  %10.3f  %10s\n",
+                        console.paint(Console::dim()), rank, console.paint(Console::reset()),
+                        (int)name_width, result.name, buffer_iterations,
+                        result.ns_per_iteration, buffer_rate);
+        }
+
+        print_summary(total_ns, p_min_time_ms);
+        return 0;
     }
 
     // Parses the runtime arguments and runs the requested benchmarks.
-    // Supported arguments: '--filter <text>', '--filter=<text>', '--list', '--min-time <ms>',
+    // Supported arguments: '--filter <text>', '--filter=<text>', '--min-time <ms>', '--list',
     // '--help'.
     // NOTE: Not 'func' - benchmarks are performed at runtime.
     int run(const int p_argc, char **p_argv) {
+        const char *program = p_argc > 0 && p_argv[0] != nullptr ? p_argv[0] : "ratlab_benchmarks";
         std::string filter;
         bool list_only = false;
         double min_time_ms = DEFAULT_MIN_TIME_MS;
@@ -350,11 +382,11 @@ class Benchmarker {
             } else if (std::strcmp(argument, "--min-time") == 0 && index + 1 < p_argc) {
                 min_time_ms = std::atof(p_argv[++index]);
             } else if (std::strcmp(argument, "--help") == 0 || std::strcmp(argument, "-h") == 0) {
-                print_usage(p_argc > 0 && p_argv[0] != nullptr ? p_argv[0] : "ratlab_benchmarks");
+                print_usage(program);
                 return 0;
             } else {
                 std::printf("Unknown argument: %s\n", argument);
-                print_usage(p_argc > 0 && p_argv[0] != nullptr ? p_argv[0] : "ratlab_benchmarks");
+                print_usage(program);
                 return 1;
             }
         }
@@ -377,58 +409,41 @@ class Benchmarker {
         return nullptr;
     }
 
-    // Prints the platform information every measurement was taken on.
-    static void print_environment(const bool p_use_color, const double p_min_time_ms) {
-        std::printf("%sPlatform: %s%s\n", paint(p_use_color, dim()),
-#if defined(LINUX_ENABLED)
-                    "Linux",
-#elif defined(WINDOWS_ENABLED)
-                    "Windows",
-#elif defined(MACOS_ENABLED)
-                    "macOS",
-#else
-                    "Unknown",
-#endif
-                    paint(p_use_color, reset()));
-        std::printf("%sCompiler: C++%d, min time per sample: %.1f ms, samples: %llu%s\n",
-                    paint(p_use_color, dim()), CPP_VERSION, p_min_time_ms, DEFAULT_SAMPLES,
-                    paint(p_use_color, reset()));
+    // Prints the footer of a benchmark run: the environment, the time spent measuring and
+    // the fastest benchmark.
+    // NOTE: Not 'func' - the summary is a runtime-only operation.
+    void print_summary(const double p_total_ns, const double p_min_time_ms) const {
+        char buffer_time[32];
+        char buffer_rate[32];
+        const BenchResult &fastest = results()[0];
+        Console::format_duration(buffer_time, sizeof(buffer_time), p_total_ns);
+        Console::format_rate(buffer_rate, sizeof(buffer_rate), fastest.iterations_per_second);
+
+        std::printf("\n");
+        console.rule(REPORT_WIDTH);
+        std::printf("  %llu %s%s%s%s%llu %s%s%.0f ms minimum%s%s\n",
+                    (unsigned long long)results().size(),
+                    Console::plural(results().size(), "benchmark", "benchmarks"),
+                    console.separator(), Console::compiler_name(), console.separator(),
+                    (unsigned long long)DEFAULT_SAMPLES,
+                    Console::plural(DEFAULT_SAMPLES, "sample", "samples"), console.separator(),
+                    p_min_time_ms, console.separator(), buffer_time);
+        std::printf("  %sfastest%s  %s%s%s  %s%.4f ns/iter%s  %s\n",
+                    console.paint(Console::dim()), console.paint(Console::reset()),
+                    console.paint(Console::bold()), fastest.name, console.paint(Console::reset()),
+                    console.paint(Console::green()), fastest.ns_per_iteration,
+                    console.paint(Console::reset()), buffer_rate);
     }
 
     // Prints the usage text of the benchmark runner.
     static void print_usage(const char *p_program) {
-        std::printf("Usage: %s [--filter <text>] [--min-time <ms>] [--list] [--help]\n", p_program);
-        std::printf("  --filter <text>    Only run the benchmarks whose name contains <text>\n");
-        std::printf("  --min-time <ms>    Minimum duration of a single sample (default %.1f ms)\n",
-                    DEFAULT_MIN_TIME_MS);
-        std::printf("  --list             List the registered benchmarks without running them\n");
-        std::printf("  --help             Show this text\n");
-    }
-
-    // Prints the footer of a benchmark run: the environment, the amount of executed
-    // benchmarks and the fastest one.
-    // NOTE: Not 'func' - the summary is a runtime-only operation.
-    static void print_summary(const bool p_use_color, const double p_min_time_ms,
-                              const std::size_t p_executed) {
-        print_environment(p_use_color, p_min_time_ms);
-
-        if (p_executed == 0) {
-            std::printf("\n%sNo benchmark was executed.%s\n", paint(p_use_color, yellow()),
-                        paint(p_use_color, reset()));
-            return;
-        }
-
-        const BenchResult *fastest = &results()[0];
-        for (const BenchResult &result : results()) {
-            if (result.ns_per_iteration < fastest->ns_per_iteration) {
-                fastest = &result;
-            }
-        }
-
-        std::printf("\n%sBenchmarks run: %llu%s\n", paint(p_use_color, bold()),
-                    (unsigned long long)p_executed, paint(p_use_color, reset()));
-        std::printf("%sFastest: %s (%s%.4f ns/iter, %.0f iter/s)%s\n", paint(p_use_color, dim()),
-                    fastest->name, paint(p_use_color, green()), fastest->ns_per_iteration,
-                    fastest->iterations_per_second, paint(p_use_color, reset()));
+        Console console;
+        std::printf("%sUsage:%s %s [options]\n", console.paint(Console::bold()),
+                    console.paint(Console::reset()), p_program);
+        std::printf("  %-18s Only run the benchmarks whose name contains <text>\n", "--filter <text>");
+        std::printf("  %-18s Minimum duration of a single sample (default %.0f ms)\n",
+                    "--min-time <ms>", DEFAULT_MIN_TIME_MS);
+        std::printf("  %-18s List the registered benchmarks without running them\n", "--list");
+        std::printf("  %-18s Show this text\n", "--help, -h");
     }
 };

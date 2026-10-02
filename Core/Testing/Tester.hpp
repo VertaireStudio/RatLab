@@ -8,22 +8,15 @@
 
 #pragma once
 
-#include "../Essentials/essentials.hpp"
+#include "console.hpp"
 
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#if defined(_WIN32)
-    #include <io.h>
-    #define TESTER_ISATTY(stream) (_isatty(_fileno(stream)) != 0)
-#else
-    #include <unistd.h>
-    #define TESTER_ISATTY(stream) (::isatty(::fileno(stream)) != 0)
-#endif
 
 // The Tester type: A self-contained, dependency-free test framework for RatLab.
 // Test bodies are registered at runtime (or at static-initialization time) and are executed
@@ -38,6 +31,14 @@ class Tester {
     /*---------------------------------------------------------------------------------------*/
 
     private:
+    // A single check which did not hold, kept until the report of its test case is written.
+    struct Failure {
+        // The number of the check inside the whole run.
+        unsigned long long index;
+        // The description of what went wrong.
+        char text[192];
+    };
+
     // A single registered test case, waiting to be executed at runtime.
     struct TestCase {
         // The name of the test case, shown in the report. (Must outlive the registration.)
@@ -54,34 +55,31 @@ class Tester {
         return cases;
     }
 
+    // The shared output plumbing.
+    Console console;
     // Totals across every executed test case.
     unsigned long long check_total = 0;
     unsigned long long pass_count = 0;
     unsigned long long fail_count = 0;
-    // Totals of the test case which is currently being executed.
-    unsigned long long case_check_total = 0;
-    unsigned long long case_fail_count = 0;
-    // The name of the test case which is currently being executed.
-    const char *case_name = "";
     // The number of test cases which have been executed in this run.
     unsigned long long case_total = 0;
-    // Whether ANSI color codes are written to the output.
-    bool use_color = false;
-    // Whether the progress-dot line is still open (no newline printed yet).
-    bool line_open = false;
-    /*-------------------------------------------------------------------------------*/
-
-    // ── Colors ──────────────────────────────────────────────────────────────────────────────
-
-    func static const char *green() { return "\x1b[32m"; }
-    func static const char *red() { return "\x1b[31m"; }
-    func static const char *yellow() { return "\x1b[33m"; }
-    func static const char *cyan() { return "\x1b[36m"; }
-    func static const char *bold() { return "\x1b[1m"; }
-    func static const char *reset() { return "\x1b[0m"; }
-
-    // Colors are stripped entirely when stdout is not a terminal (CI logs stay plain).
-    func const char *paint(const char *p_code) const { return use_color ? p_code : ""; }
+    // The name of the test case which is currently being executed.
+    const char *case_name = "";
+    // The totals of the test case which is currently being executed.
+    unsigned long long case_check_total = 0;
+    unsigned long long case_fail_count = 0;
+    // The time the test case which is currently being executed took, in nanoseconds.
+    double case_ns = 0.0;
+    // The failing checks of the test case which is currently being executed.
+    std::vector<Failure> case_failures;
+    // The width of the name column, derived from the longest executed test case name.
+    std::size_t name_width = 0;
+    // The width of the whole report, used to draw the rules.
+    static constexpr const std::size_t REPORT_WIDTH = 74;
+    // The longest name which is allowed to widen the name column.
+    static constexpr const std::size_t MAX_NAME_WIDTH = 46;
+    // Whether only the failing test cases are reported.
+    bool quiet = false;
     /*-------------------------------------------------------------------------------*/
 
     // ── Value printing ───────────────────────────────────────────────────────────────────────
@@ -134,32 +132,30 @@ class Tester {
 
     // ── Check bookkeeping ────────────────────────────────────────────────────────────────────
 
-    // Counts a passing check and advances the progress dots.
-    // NOTE: Not 'func' - stdout flushing cannot be part of constant evaluation.
+    // Counts a passing check.
+    // NOTE: Not 'func' - the counters belong to a running test case.
     void count_pass() {
         check_total += 1;
         case_check_total += 1;
         pass_count += 1;
-        std::printf("%s.%s", paint(green()), paint(reset()));
-        std::fflush(stdout);
-        line_open = true;
     }
 
-    // Counts a failing check; closes the dot line so the failure block starts cleanly.
-    // NOTE: Not 'func' - stdout flushing cannot be part of constant evaluation.
-    void count_fail() {
+    // Counts a failing check and keeps its description until the report is written.
+    // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
+    void count_fail(const char *p_message) {
         check_total += 1;
         case_check_total += 1;
         fail_count += 1;
         case_fail_count += 1;
-        if (line_open) {
-            std::printf("\n");
-            line_open = false;
-        }
+
+        Failure failure;
+        failure.index = check_total;
+        std::snprintf(failure.text, sizeof(failure.text), "%s", p_message);
+        case_failures.push_back(failure);
     }
 
-    // Records a comparison result. On failure, both operands are shown alongside the test name.
-    // NOTE: Not 'func' - the failing branch writes to stdout.
+    // Records a comparison result. On failure, both operands are kept alongside the test name.
+    // NOTE: Not 'func' - the failing branch formats a message.
     template <typename T>
     void record(const bool p_passed, const char *p_relation, const T &p_a, const T &p_b) {
         if (p_passed) {
@@ -167,64 +163,38 @@ class Tester {
             return;
         }
 
-        count_fail();
-
         char buffer_a[64];
         char buffer_b[64];
         write_value(buffer_a, sizeof(buffer_a), p_a, 0);
         write_value(buffer_b, sizeof(buffer_b), p_b, 0);
 
-        std::printf("    %sFAIL%s [%s] (#%llu) condition '%s %s %s' did not hold\n",
-                    paint(red()), paint(reset()), case_name, check_total,
-                    buffer_a, p_relation, buffer_b);
+        char message[192];
+        std::snprintf(message, sizeof(message), "'%s %s %s' did not hold", buffer_a, p_relation, buffer_b);
+        count_fail(message);
     }
 
     // Records a bare boolean expectation ('test_true' / 'test_false').
-    // NOTE: Not 'func' - the failing branch writes to stdout.
+    // NOTE: Not 'func' - the failing branch formats a message.
     void record_flag(const bool p_passed, const char *p_expectation, const bool p_got) {
         if (p_passed) {
             count_pass();
             return;
         }
 
-        count_fail();
-        std::printf("    %sFAIL%s [%s] (#%llu) expected %s, got %s\n",
-                    paint(red()), paint(reset()), case_name, check_total,
-                    p_expectation, p_got ? "true" : "false");
+        char message[192];
+        std::snprintf(message, sizeof(message), "expected '%s', got '%s'",
+                      p_expectation, p_got ? "true" : "false");
+        count_fail(message);
     }
+    /*-------------------------------------------------------------------------------*/
 
-    // Starts a new test case; every check made from now on belongs to it.
-    // NOTE: Not 'func' - the progress line has to be flushed.
-    void begin_case(const char *p_name) {
-        if (line_open) {
-            std::printf("\n");
-            line_open = false;
-        }
-        case_name = p_name;
-        case_check_total = 0;
-        case_fail_count = 0;
-        case_total += 1;
-        std::printf("%s[ RUN      ]%s %s", paint(bold()), paint(reset()), p_name);
-        std::fflush(stdout);
-    }
+    // ── Reporting ───────────────────────────────────────────────────────────────────────────
 
-    // Ends the current test case and prints its tally.
-    // NOTE: Not 'func' - the progress line has to be flushed.
-    void end_case() {
-        if (line_open) {
-            std::printf("\n");
-            line_open = false;
-        }
-        if (case_check_total == 0) {
-            std::printf("%s[      OK ]%s %s %s(no checks performed)%s\n", paint(bold()), paint(reset()),
-                        case_name, paint(yellow()), paint(reset()));
-        } else if (case_fail_count == 0) {
-            std::printf("%s[       OK ]%s %s %s(%llu checks passed)%s\n", paint(bold()), paint(reset()),
-                        case_name, paint(green()), case_check_total, paint(reset()));
-        } else {
-            std::printf("%s[  FAILED  ]%s %s %s(%llu of %llu checks failed)%s\n", paint(bold()), paint(reset()),
-                        case_name, paint(red()), case_fail_count, case_check_total, paint(reset()));
-        }
+    // Returns the current value of the monotonic clock, in nanoseconds.
+    static double now_ns() {
+        return static_cast<double>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count());
     }
 
     // Returns whether the given name matches the given filter (case sensitive substring match).
@@ -232,12 +202,102 @@ class Tester {
     static bool matches(const char *p_name, const std::string &p_filter) {
         return p_filter.empty() || std::string(p_name).find(p_filter) != std::string::npos;
     }
+
+    // Returns the width of the name column, so that every test case lines up.
+    static std::size_t measure_name_width(const std::string &p_filter) {
+        std::size_t width = 0;
+        for (const TestCase &test : registry()) {
+            if (!matches(test.name, p_filter)) {
+                continue;
+            }
+            const std::size_t length = std::strlen(test.name);
+            if (length > width) {
+                width = length;
+            }
+        }
+        return width < MAX_NAME_WIDTH ? width : MAX_NAME_WIDTH;
+    }
+
+    // Prints the single line of the test case which was just executed, followed by one line
+    // per failing check. Passing test cases are skipped entirely while 'quiet' is set.
+    // NOTE: Not 'func' - the report is a runtime-only operation.
+    void print_case() const {
+        const bool passed = case_fail_count == 0;
+        if (quiet && passed) {
+            return;
+        }
+
+        char buffer_checks[32];
+        char buffer_time[32];
+        Console::format_checks(buffer_checks, sizeof(buffer_checks), case_check_total);
+        Console::format_duration(buffer_time, sizeof(buffer_time), case_ns);
+
+        console.clear_line();
+        std::printf("  %s%s%s  %-*s  %*s  %*s\n",
+                    passed ? console.paint(Console::green()) : console.paint(Console::red()),
+                    passed ? console.glyph_ok() : console.glyph_fail(),
+                    console.paint(Console::reset()),
+                    (int)name_width, case_name,
+                    9, buffer_checks,
+                    10, buffer_time);
+
+        for (const Failure &failure : case_failures) {
+            std::printf("      %s!%s %s%4llu%s  %s\n",
+                        console.paint(Console::red()), console.paint(Console::reset()),
+                        console.paint(Console::dim()), failure.index, console.paint(Console::reset()),
+                        failure.text);
+        }
+    }
+
+    // Executes a single test case and reports it.
+    // NOTE: Not 'func' - tests are performed at runtime.
+    void run_case(const TestCase &p_test) {
+        case_name = p_test.name;
+        case_check_total = 0;
+        case_fail_count = 0;
+        case_failures.clear();
+        case_total += 1;
+
+        console.progress(case_name, name_width);
+        const double start_ns = now_ns();
+        p_test.body(*this);
+        case_ns = now_ns() - start_ns;
+        print_case();
+    }
+
+    // Prints the summary of the whole run.
+    // NOTE: Not 'func' - the summary is a runtime-only operation.
+    void print_summary(const double p_total_ns) const {
+        char buffer_time[32];
+        char buffer_count[24];
+        Console::format_duration(buffer_time, sizeof(buffer_time), p_total_ns);
+        Console::format_count(buffer_count, sizeof(buffer_count), check_total);
+
+        std::printf("\n");
+        console.rule(REPORT_WIDTH);
+        std::printf("  %llu %s%s%s%s%llu passed%s%llu failed%s%s\n",
+                    case_total, Console::plural(case_total, "test case", "test cases"),
+                    console.separator(), buffer_count, console.separator(),
+                    pass_count, console.separator(), fail_count, console.separator(), buffer_time);
+
+        const char *verdict = "FAILURE";
+        const char *color = console.paint(Console::red());
+        if (all_passed()) {
+            verdict = "SUCCESS";
+            color = console.paint(Console::green());
+        } else if (check_total == 0) {
+            verdict = "NO CHECKS PERFORMED";
+            color = console.paint(Console::yellow());
+        }
+        std::printf("  %s%s%s%s\n", color, console.paint(Console::bold()), verdict,
+                    console.paint(Console::reset()));
+    }
     /*-------------------------------------------------------------------------------*/
 
     public:
     // Constructor.
-    // NOTE: Not 'func' - terminal detection is a runtime-only query.
-    Tester() { use_color = TESTER_ISATTY(stdout); }
+    Tester() = default;
+
     // Deleted copy constructor: a test run owns its own counters.
     Tester(const Tester &) = delete;
     // Deleted copy assignment: a test run owns its own counters.
@@ -337,9 +397,19 @@ class Tester {
 
     // ── Execution ───────────────────────────────────────────────────────────────────────────
 
-    // Prints every registered test case which matches the given filter.
+    // Prints every registered test case which matches the given filter, one per line.
     static void list(const std::string &p_filter = std::string()) {
-        std::printf("Registered test cases: %llu\n", (unsigned long long)registry().size());
+        Console console;
+        std::size_t shown = 0;
+        for (const TestCase &test : registry()) {
+            if (matches(test.name, p_filter)) {
+                ++shown;
+            }
+        }
+
+        std::printf("%s%s%llu test cases%s\n", console.paint(Console::bold()),
+                    console.paint(Console::cyan()), (unsigned long long)shown,
+                    console.paint(Console::reset()));
         for (const TestCase &test : registry()) {
             if (matches(test.name, p_filter)) {
                 std::printf("  %s\n", test.name);
@@ -350,46 +420,58 @@ class Tester {
     // Executes every registered test case which matches the given filter, and returns
     // 0 when all of the executed checks passed, otherwise 1.
     // NOTE: Not 'func' - tests are performed at runtime.
-    int run(const std::string &p_filter = std::string()) {
+    int run(const std::string &p_filter = std::string(), const bool p_quiet = false) {
+        quiet = p_quiet;
+        name_width = measure_name_width(p_filter);
+
+        std::printf("%s%sRatLab tests%s  %s%llu registered\n", console.paint(Console::bold()),
+                    console.paint(Console::cyan()), console.paint(Console::reset()),
+                    console.separator(), (unsigned long long)registry().size());
+
+        const double start_ns = now_ns();
         for (const TestCase &test : registry()) {
-            if (!matches(test.name, p_filter)) {
-                continue;
+            if (matches(test.name, p_filter)) {
+                run_case(test);
             }
-            begin_case(test.name);
-            test.body(*this);
-            end_case();
         }
+        const double total_ns = now_ns() - start_ns;
 
         if (case_total == 0) {
-            std::printf("%sNo test case matched the filter '%s'.%s\n",
-                        paint(yellow()), p_filter.c_str(), paint(reset()));
+            std::printf("\n  %sno test case matched the filter '%s'%s\n",
+                        console.paint(Console::yellow()), p_filter.c_str(),
+                        console.paint(Console::reset()));
         }
 
-        print_results();
+        print_summary(total_ns);
         return all_passed() ? 0 : 1;
     }
 
     // Parses the runtime arguments and executes the requested test cases.
-    // Supported arguments: '--filter <text>', '--filter=<text>', '--list', '--help'.
+    // Supported arguments: '--filter <text>', '--filter=<text>', '--list', '--quiet', '--help'.
     // NOTE: Not 'func' - tests are performed at runtime.
     int run(const int p_argc, char **p_argv) {
+        const char *program = p_argc > 0 && p_argv[0] != nullptr ? p_argv[0] : "ratlab_tests";
         std::string filter;
         bool list_only = false;
+        bool quiet = false;
 
         for (int index = 1; index < p_argc; ++index) {
             const char *argument = p_argv[index] == nullptr ? "" : p_argv[index];
             if (std::strcmp(argument, "--list") == 0) {
                 list_only = true;
+            } else if (std::strcmp(argument, "--quiet") == 0 || std::strcmp(argument, "-q") == 0) {
+                quiet = true;
             } else if (std::strcmp(argument, "--filter") == 0 && index + 1 < p_argc) {
                 filter = p_argv[++index];
             } else if (std::strncmp(argument, "--filter=", 9) == 0) {
                 filter = argument + 9;
             } else if (std::strcmp(argument, "--help") == 0 || std::strcmp(argument, "-h") == 0) {
-                print_usage(p_argc > 0 && p_argv[0] != nullptr ? p_argv[0] : "ratlab_tests");
+                print_usage(program);
                 return 0;
             } else {
-                std::printf("%sUnknown argument: %s%s\n", paint(red()), argument, paint(reset()));
-                print_usage(p_argc > 0 && p_argv[0] != nullptr ? p_argv[0] : "ratlab_tests");
+                std::printf("%sUnknown argument: %s%s\n", console.paint(Console::red()), argument,
+                            console.paint(Console::reset()));
+                print_usage(program);
                 return 1;
             }
         }
@@ -399,7 +481,7 @@ class Tester {
             return 0;
         }
 
-        return run(filter);
+        return run(filter, quiet);
     }
 
     // Returns whether every executed check passed and at least one check was performed.
@@ -411,40 +493,17 @@ class Tester {
     // Returns the number of failing checks of the whole run.
     unsigned long long failures() const { return fail_count; }
 
-    // Prints the summary of the whole run.
-    // NOTE: Not 'func' - the summary is a runtime-only operation.
-    void print_results() const {
-        double pass_rate = 0.0;
-        if (check_total > 0) {
-            pass_rate = 100.0 * static_cast<double>(pass_count) / static_cast<double>(check_total);
-        }
-
-        std::printf("\n");
-        std::printf("==============================================\n");
-        std::printf("           RATLAB TEST RESULTS\n");
-        std::printf("==============================================\n");
-        std::printf("  Test cases run ..... %llu\n", case_total);
-        std::printf("  Checks total ....... %llu\n", check_total);
-        std::printf("  Checks passed ...... %llu\n", pass_count);
-        std::printf("  Checks failed ...... %llu\n", fail_count);
-        std::printf("  Pass rate .......... %.1f%%\n", pass_rate);
-        std::printf("----------------------------------------------\n");
-        if (all_passed()) {
-            std::printf("  RESULT: %sSUCCESS%s (all checks passed)\n", paint(green()), paint(reset()));
-        } else if (check_total == 0) {
-            std::printf("  RESULT: %sNO CHECKS PERFORMED%s\n", paint(yellow()), paint(reset()));
-        } else {
-            std::printf("  RESULT: %sFAILURE%s (%llu failing checks)\n",
-                        paint(red()), paint(reset()), fail_count);
-        }
-        std::printf("==============================================\n");
-    }
+    // Returns the number of checks which were performed so far.
+    unsigned long long checks() const { return check_total; }
 
     // Prints the usage text of the test runner.
     static void print_usage(const char *p_program) {
-        std::printf("Usage: %s [--filter <text>] [--list] [--help]\n", p_program);
-        std::printf("  --filter <text>  Only run the test cases whose name contains <text>\n");
-        std::printf("  --list           List the registered test cases without running them\n");
-        std::printf("  --help           Show this text\n");
+        Console console;
+        std::printf("%sUsage:%s %s [options]\n", console.paint(Console::bold()),
+                    console.paint(Console::reset()), p_program);
+        std::printf("  %-18s Only run the test cases whose name contains <text>\n", "--filter <text>");
+        std::printf("  %-18s Only report the failing test cases\n", "--quiet, -q");
+        std::printf("  %-18s List the registered test cases without running them\n", "--list");
+        std::printf("  %-18s Show this text\n", "--help, -h");
     }
 };

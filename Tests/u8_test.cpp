@@ -181,13 +181,18 @@ static void test_increment_and_decrement(Tester &p_tester) {
     p_tester.test_equal(zero.get(), (unsigned char)255);
 }
 
-// The assignment operators overwrite the wrapped value.
+// Assignment overwrites the wrapped value. NOTE: the u8 does not declare an 'operator=' of its
+// own, so these go through the implicitly generated copy assignment, which converts the right
+// hand side to a u8 first and therefore copies the accessability along with the value.
 static void test_assignment(Tester &p_tester) {
     u8 value;
     value = (unsigned char)30;
     p_tester.test_equal(value.get(), (unsigned char)30);
-    value = u8((unsigned char)60);
+    p_tester.test_equal(value.is_read_and_write(), true);
+
+    value = u8((unsigned char)60, Variant::Accessability::Passive);
     p_tester.test_equal(value.get(), (unsigned char)60);
+    p_tester.test_equal(value.is_passive(), true);
 
     // A u8 assigned from another u8 takes over the value of the source.
     u8 source((unsigned char)90);
