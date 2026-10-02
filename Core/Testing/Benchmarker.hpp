@@ -24,6 +24,8 @@
 // on demand by 'run', either from 'main' or from any other runtime entry point.
 // The iteration count of every benchmark is calibrated automatically until the requested
 // measurement time is reached, which keeps the reported timings stable across machines.
+// The outcome of every run is additionally written to 'REPORT_FILE' as plain text, so that it
+// survives the process and can be compared between two runs.
 class Benchmarker {
     public:
     // The signature every registered benchmark body has to follow.
@@ -88,6 +90,11 @@ class Benchmarker {
     static constexpr const std::size_t REPORT_WIDTH = 74;
     // The longest name which is allowed to widen the name column.
     static constexpr const std::size_t MAX_NAME_WIDTH = 34;
+    // The directory the report of every run is written into, relative to the working directory
+    // of the process. It is created when it does not exist yet.
+    static constexpr const char *REPORT_DIRECTORY = "Misc";
+    // The report itself, overwritten each time so that it always holds the most recent run.
+    static constexpr const char *REPORT_FILE = "Misc/ratlab_benchmarks.txt";
     /*-------------------------------------------------------------------------------*/
 
     // ── Measurement ─────────────────────────────────────────────────────────────────────────
@@ -171,6 +178,87 @@ class Benchmarker {
     // An empty filter matches everything.
     static bool matches(const char *p_name, const std::string &p_filter) {
         return p_filter.empty() || std::string(p_name).find(p_filter) != std::string::npos;
+    }
+
+    // ── Report file ────────────────────────────────────────────────────────────────────────
+
+    // Writes the outcome of the finished run into 'REPORT_FILE': the environment it was
+    // measured in, one line per benchmark, and the summary of the run. The report is plain
+    // text, holds no escape sequences, and can therefore be diffed between two runs.
+    // The report directory is created when the process does not run from the workspace root.
+    // Returns whether the report could be written.
+    // NOTE: Not 'func' - the report is a runtime-only operation.
+    bool export_report(const std::string &p_filter, const double p_total_ns,
+                       const double p_min_time_ms) const {
+        if (!Console::ensure_directory(REPORT_DIRECTORY)) {
+            std::printf("  %s%scould not create %s%s\n", console.paint(Console::red()),
+                        console.paint(Console::bold()), REPORT_DIRECTORY,
+                        console.paint(Console::reset()));
+            return false;
+        }
+
+        std::FILE *file = std::fopen(REPORT_FILE, "w");
+        if (file == nullptr) {
+            std::printf("  %s%scould not write %s%s\n", console.paint(Console::red()),
+                        console.paint(Console::bold()), REPORT_FILE,
+                        console.paint(Console::reset()));
+            return false;
+        }
+
+        char buffer_stamp[32];
+        Console::format_timestamp(buffer_stamp, sizeof(buffer_stamp));
+
+        std::fprintf(file, "RatLab benchmarks\n");
+        std::fprintf(file, "================\n\n");
+        std::fprintf(file, "date      : %s\n", buffer_stamp);
+        std::fprintf(file, "platform  : %s\n", Console::platform_name());
+        std::fprintf(file, "compiler  : %s\n", Console::compiler_name());
+        std::fprintf(file, "standard  : %s\n", Console::cpp_standard_name());
+        std::fprintf(file, "filter    : %s\n", p_filter.empty() ? "(none)" : p_filter.c_str());
+        std::fprintf(file, "min time  : %.0f ms per sample\n", p_min_time_ms);
+        std::fprintf(file, "samples   : %llu per benchmark\n\n", (unsigned long long)DEFAULT_SAMPLES);
+
+        if (results().empty()) {
+            std::fprintf(file, "no benchmark matched the filter\n");
+        } else {
+            const std::size_t name_width = measure_name_width(p_filter);
+            std::fprintf(file, "%4s  %-*s  %15s  %10s  %10s\n", "", (int)name_width,
+                         "benchmark", "iterations", "ns/iter", "iter/s");
+
+            unsigned long long rank = 0;
+            for (const BenchResult &result : results()) {
+                ++rank;
+                char buffer_iterations[24];
+                char buffer_rate[32];
+                Console::format_count(buffer_iterations, sizeof(buffer_iterations),
+                                      result.iterations);
+                Console::format_rate(buffer_rate, sizeof(buffer_rate),
+                                     result.iterations_per_second);
+                std::fprintf(file, "%4llu  %-*s  %15s  %10.3f  %10s\n", rank,
+                             (int)name_width, result.name, buffer_iterations,
+                             result.ns_per_iteration, buffer_rate);
+            }
+
+            char buffer_time[32];
+            char buffer_rate[32];
+            const BenchResult &fastest = results()[0];
+            Console::format_duration(buffer_time, sizeof(buffer_time), p_total_ns);
+            Console::format_rate(buffer_rate, sizeof(buffer_rate), fastest.iterations_per_second);
+            std::fprintf(file, "\n%llu %s, %llu %s each, %.0f ms minimum, %s total\n",
+                         (unsigned long long)results().size(),
+                         Console::plural(results().size(), "benchmark", "benchmarks"),
+                         (unsigned long long)DEFAULT_SAMPLES,
+                         Console::plural(DEFAULT_SAMPLES, "sample", "samples"), p_min_time_ms,
+                         buffer_time);
+            std::fprintf(file, "fastest: %s  %.4f ns/iter  %s\n", fastest.name,
+                         fastest.ns_per_iteration, buffer_rate);
+        }
+
+        std::fclose(file);
+        std::printf("  %sreport%s  %s%s%s\n", console.paint(Console::dim()),
+                    console.paint(Console::reset()), console.paint(Console::bold()), REPORT_FILE,
+                    console.paint(Console::reset()));
+        return true;
     }
     /*-------------------------------------------------------------------------------*/
 
@@ -334,6 +422,7 @@ class Benchmarker {
         if (results().empty()) {
             std::printf("\n  %sno benchmark matched the filter%s\n",
                         console.paint(Console::yellow()), console.paint(Console::reset()));
+            export_report(p_filter, total_ns, p_min_time_ms);
             return 1;
         }
 
@@ -358,6 +447,7 @@ class Benchmarker {
         }
 
         print_summary(total_ns, p_min_time_ms);
+        export_report(p_filter, total_ns, p_min_time_ms);
         return 0;
     }
 

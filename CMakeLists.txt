@@ -13,6 +13,7 @@ project(RatLab
 # ---- Options ----------------------------------------------------------------
 option(RATLAB_BUILD_TESTS       "Build the unit tests"                  ON)
 option(RATLAB_BUILD_BENCHMARKS  "Build the benchmarks"                  ON)
+option(RATLAB_GENERATE_REPORTS  "Collect the run reports into Misc"     ON)
 option(RATLAB_WARNINGS_AS_ERRORS "Treat compiler warnings as errors"   OFF)
 
 # ---- C++ Standard -----------------------------------------------------------
@@ -66,4 +67,35 @@ endif()
 # ---- Benchmarks -------------------------------------------------------------
 if(RATLAB_BUILD_BENCHMARKS)
     add_subdirectory(Benchmarks)
+endif()
+
+# ---- Reports ---------------------------------------------------------------
+# 'Tools/collect_reports.sh' runs the runners above and files their reports into 'Misc'.
+#
+# It hangs off a custom target of its own rather than a POST_BUILD step on each executable:
+# a POST_BUILD step would fire once per executable, so the collectors would race each other
+# and each of them could start before the other executable had even been linked. Depending on
+# the executables instead makes the collector run exactly once, and only after everything it
+# needs is in place.
+#
+# The collector is a POSIX shell tool, so it is only wired into the build where the shell is
+# there to run it. On a Windows host it stays available for a manual run from Git Bash, and
+# the new option keeps it out of the build everywhere.
+set(RATLAB_REPORT_RUNNERS)
+if(RATLAB_BUILD_TESTS)
+    list(APPEND RATLAB_REPORT_RUNNERS ratlab_tests)
+endif()
+if(RATLAB_BUILD_BENCHMARKS)
+    list(APPEND RATLAB_REPORT_RUNNERS ratlab_benchmarks)
+endif()
+
+if(RATLAB_GENERATE_REPORTS AND RATLAB_REPORT_RUNNERS AND NOT CMAKE_HOST_WIN32)
+    add_custom_target(ratlab_reports ALL
+        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/Tools/collect_reports.sh" "${CMAKE_BINARY_DIR}"
+        DEPENDS ${RATLAB_REPORT_RUNNERS}
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        USES_TERMINAL
+        COMMENT "Collecting the test and benchmark reports into Misc"
+        VERBATIM
+    )
 endif()

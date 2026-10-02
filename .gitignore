@@ -1,2 +1,4 @@
 /build
 Misc/filelist.txt
+Misc/ratlab_benchmarks*.txt
+Misc/ratlab_tests*.txt

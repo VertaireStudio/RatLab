@@ -10,13 +10,17 @@
 
 #include "../Essentials/essentials.hpp"
 
+#include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 
 #if defined(_WIN32)
+    #include <direct.h>
     #include <io.h>
     #define RATLAB_ISATTY(stream) (_isatty(_fileno(stream)) != 0)
 #else
+    #include <sys/stat.h>
     #include <unistd.h>
     #define RATLAB_ISATTY(stream) (::isatty(::fileno(stream)) != 0)
 #endif
@@ -179,6 +183,45 @@ class Console {
     static void format_checks(char *r_buffer, const std::size_t p_size,
                               const unsigned long long p_checks) {
         std::snprintf(r_buffer, p_size, "%llu %s", p_checks, p_checks == 1ull ? "check" : "checks");
+    }
+
+    // Writes the current local date and time as '2026-10-02 15:04:05', so that a report file
+    // says when it was produced.
+    // NOTE: Not 'func' - the clock and 'strftime' are runtime-only operations.
+    static void format_timestamp(char *r_buffer, const std::size_t p_size) {
+        const std::time_t now = std::time(nullptr);
+        // 'localtime' returns a pointer to shared storage, so the result is copied out of it.
+        std::tm parts = {};
+#if defined(_WIN32)
+        localtime_s(&parts, &now);
+#else
+        localtime_r(&now, &parts);
+#endif
+        if (std::strftime(r_buffer, p_size, "%Y-%m-%d %H:%M:%S", &parts) == 0) {
+            std::snprintf(r_buffer, p_size, "unknown");
+        }
+    }
+    /*-------------------------------------------------------------------------------*/
+
+    // ── Files ──────────────────────────────────────────────────────────────────────────────
+
+    // Creates the given directory when it does not exist yet, so that a report can be written
+    // into a directory the working directory does not have yet. Only a single level is
+    // created, which is all the report directory needs.
+    // Returns whether the directory is available afterwards.
+    // NOTE: Not 'func' - creating a directory is a runtime-only operation.
+    static bool ensure_directory(const char *p_path) {
+#if defined(_WIN32)
+        const int status = _mkdir(p_path);
+#else
+        const int status = ::mkdir(p_path, 0755);
+#endif
+        if (status == 0) {
+            return true;
+        }
+        // An already existing directory is exactly what was asked for, the error is the only
+        // one which is not a failure here.
+        return errno == EEXIST;
     }
     /*-------------------------------------------------------------------------------*/
 

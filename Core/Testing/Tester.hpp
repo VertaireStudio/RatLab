@@ -23,6 +23,8 @@
 // on demand by 'run', either from 'main' or from any other runtime entry point.
 // Every check made inside a test body is counted, and a non-zero exit code is returned
 // whenever at least one check fails.
+// The outcome of every run is additionally written to 'REPORT_FILE' as plain text, so that it
+// survives the process and can be compared between two runs.
 class Tester {
     public:
     // The signature every registered test body has to follow.
@@ -45,6 +47,22 @@ class Tester {
         const char *name;
         // The body which performs the actual checks.
         TestBody body;
+    };
+
+    // The compiled outcome of a single executed test case, kept until the whole run has been
+    // reported. Every executed test case appends one, which is what makes the outcome of a
+    // finished run available for the report file.
+    struct CaseResult {
+        // The name of the test case, shown in the report. (Must outlive the registration.)
+        const char *name;
+        // The amount of checks which were performed by the test case.
+        unsigned long long checks;
+        // The amount of checks which did not hold.
+        unsigned long long failing_checks;
+        // The time the test case took, in nanoseconds.
+        double ns;
+        // The failing checks, empty when every check of the test case held.
+        std::vector<Failure> failures;
     };
 
     // The shared registry of every test case known to the workspace.
@@ -72,12 +90,19 @@ class Tester {
     double case_ns = 0.0;
     // The failing checks of the test case which is currently being executed.
     std::vector<Failure> case_failures;
+    // The outcome of every test case executed in this run, in the order they were executed.
+    std::vector<CaseResult> case_results;
     // The width of the name column, derived from the longest executed test case name.
     std::size_t name_width = 0;
     // The width of the whole report, used to draw the rules.
     static constexpr const std::size_t REPORT_WIDTH = 74;
     // The longest name which is allowed to widen the name column.
     static constexpr const std::size_t MAX_NAME_WIDTH = 46;
+    // The directory the report of every run is written into, relative to the working directory
+    // of the process. It is created when it does not exist yet.
+    static constexpr const char *REPORT_DIRECTORY = "Misc";
+    // The report itself, overwritten each time so that it always holds the most recent run.
+    static constexpr const char *REPORT_FILE = "Misc/ratlab_tests.txt";
     // Whether only the failing test cases are reported.
     bool quiet = false;
     /*-------------------------------------------------------------------------------*/
@@ -263,6 +288,16 @@ class Tester {
         p_test.body(*this);
         case_ns = now_ns() - start_ns;
         print_case();
+
+        // The outcome is kept, since the report file has to describe every executed test case,
+        // not only the one which happens to be the last one.
+        CaseResult result;
+        result.name = p_test.name;
+        result.checks = case_check_total;
+        result.failing_checks = case_fail_count;
+        result.ns = case_ns;
+        result.failures = case_failures;
+        case_results.push_back(result);
     }
 
     // Prints the summary of the whole run.
@@ -291,6 +326,81 @@ class Tester {
         }
         std::printf("  %s%s%s%s\n", color, console.paint(Console::bold()), verdict,
                     console.paint(Console::reset()));
+    }
+
+    // ── Report file ────────────────────────────────────────────────────────────────────────
+
+    // Writes the outcome of the finished run into 'REPORT_FILE': the environment it was
+    // executed in, one line per executed test case followed by its failing checks, and the
+    // summary of the run. The report is plain text, holds no escape sequences, and can
+    // therefore be diffed between two runs. Test cases which passed are always listed, even
+    // when the console report skipped them.
+    // The report directory is created when the process does not run from the workspace root.
+    // Returns whether the report could be written.
+    // NOTE: Not 'func' - the report is a runtime-only operation.
+    bool export_report(const std::string &p_filter, const double p_total_ns) const {
+        if (!Console::ensure_directory(REPORT_DIRECTORY)) {
+            std::printf("  %s%scould not create %s%s\n", console.paint(Console::red()),
+                        console.paint(Console::bold()), REPORT_DIRECTORY,
+                        console.paint(Console::reset()));
+            return false;
+        }
+
+        std::FILE *file = std::fopen(REPORT_FILE, "w");
+        if (file == nullptr) {
+            std::printf("  %s%scould not write %s%s\n", console.paint(Console::red()),
+                        console.paint(Console::bold()), REPORT_FILE,
+                        console.paint(Console::reset()));
+            return false;
+        }
+
+        char buffer_stamp[32];
+        Console::format_timestamp(buffer_stamp, sizeof(buffer_stamp));
+
+        std::fprintf(file, "RatLab tests\n");
+        std::fprintf(file, "============\n\n");
+        std::fprintf(file, "date      : %s\n", buffer_stamp);
+        std::fprintf(file, "platform  : %s\n", Console::platform_name());
+        std::fprintf(file, "compiler  : %s\n", Console::compiler_name());
+        std::fprintf(file, "standard  : %s\n", Console::cpp_standard_name());
+        std::fprintf(file, "filter    : %s\n\n", p_filter.empty() ? "(none)" : p_filter.c_str());
+
+        if (case_results.empty()) {
+            std::fprintf(file, "no test case matched the filter\n");
+        } else {
+            for (const CaseResult &result : case_results) {
+                char buffer_checks[32];
+                char buffer_time[32];
+                Console::format_checks(buffer_checks, sizeof(buffer_checks), result.checks);
+                Console::format_duration(buffer_time, sizeof(buffer_time), result.ns);
+
+                std::fprintf(file, "  %-6s  %-*s  %*s  %*s\n",
+                             result.failing_checks == 0 ? "PASSED" : "FAILED",
+                             (int)measure_name_width(p_filter), result.name,
+                             9, buffer_checks, 10, buffer_time);
+                for (const Failure &failure : result.failures) {
+                    std::fprintf(file, "      !%4llu  %s\n", failure.index, failure.text);
+                }
+            }
+        }
+
+        char buffer_time[32];
+        char buffer_checks[32];
+        Console::format_duration(buffer_time, sizeof(buffer_time), p_total_ns);
+        Console::format_checks(buffer_checks, sizeof(buffer_checks), check_total);
+
+        std::fprintf(file, "\n%llu %s, %s, %llu passed, %llu failed, %s total\n",
+                     case_total, Console::plural(case_total, "test case", "test cases"),
+                     buffer_checks, pass_count, fail_count, buffer_time);
+        std::fprintf(file, "%s\n", check_total == 0 ? "NO CHECKS PERFORMED"
+                          : all_passed()           ? "SUCCESS"
+                                                     : "FAILURE");
+
+        std::fclose(file);
+        std::printf("  %sreport%s  %s%s%s\n", console.paint(Console::dim()),
+                    console.paint(Console::reset()), console.paint(Console::bold()), REPORT_FILE,
+                    console.paint(Console::reset()));
+        return true;
     }
     /*-------------------------------------------------------------------------------*/
 
@@ -423,6 +533,7 @@ class Tester {
     int run(const std::string &p_filter = std::string(), const bool p_quiet = false) {
         quiet = p_quiet;
         name_width = measure_name_width(p_filter);
+        case_results.clear();
 
         std::printf("%s%sRatLab tests%s  %s%llu registered\n", console.paint(Console::bold()),
                     console.paint(Console::cyan()), console.paint(Console::reset()),
@@ -443,6 +554,7 @@ class Tester {
         }
 
         print_summary(total_ns);
+        export_report(p_filter, total_ns);
         return all_passed() ? 0 : 1;
     }
 
