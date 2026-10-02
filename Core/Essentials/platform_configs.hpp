@@ -79,7 +79,7 @@ static constexpr const ARCHITEXTURES CURRENT_PLATFORM_ARCHITEXTURE = ARCHITEXTUR
     #if __cplusplus >= 202600L
         #define CPP_VERSION 26
         static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_26;
-    #elif __cplusplus >= 202300L
+    #elif __cplusplus >= 202100L
         #define CPP_VERSION 23
         static constexpr const CPP_VERSIONS CURRENT_CPP_VERSION = CPP_VERSIONS::CPP_23;
     #elif __cplusplus >= 202000L
