@@ -123,11 +123,6 @@ class u8 : public Variant {
     // Post-decrement operator.
     func u8 operator--(int) { if (can_write()) set(get() - 1); return can_read() ? *this : u8(0); }
 
-    // Assignment operator with another u8 value.
-    func void operator=(const u8 &p_other) { set(p_other); }
-    // Assignment operator with an unsigned char value.
-    func void operator=(unsigned char p_value) { set(p_value); }
-
     // Equality operator with another u8 value.
     func bool operator==(const u8 &p_other) const { return get() == p_other.get(); }
     // Inequality operator with another u8 value.
@@ -154,10 +149,6 @@ class u8 : public Variant {
     // Greater than or equal operator with an unsigned char value.
     func bool operator>=(unsigned char p_other) const { return get() >= p_other; }
     /*-------------------------------------------------------------------------------*/
-
-    // Returns the absolute value of the u8 value.
-    // Returns 0 if the value cannot be read.
-    func u8 abs() const { return !can_read() ? u8(0) : (get() < 0 ? u8(-get()) : u8(get())); }
 
     // Returns the lower value between two u8 values.
     // Returns 0 if the value cannot be read.
