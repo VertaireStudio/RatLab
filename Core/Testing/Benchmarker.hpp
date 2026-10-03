@@ -49,13 +49,13 @@ class Throughput {
     public:
     // One element per iteration, which is what a benchmark without an explicit throughput
     // reports.
-    func static Throughput elements() { return Throughput{1ull, "elem"}; }
+    static func Throughput elements() { return Throughput{1ull, "elem"}; }
     // The given amount of elements per iteration.
-    func static Throughput elements(const unsigned long long p_amount) {
+    static func Throughput elements(const unsigned long long p_amount) {
         return Throughput{p_amount, "elem"};
     }
     // The given amount of bytes per iteration.
-    func static Throughput bytes(const unsigned long long p_amount) {
+    static func Throughput bytes(const unsigned long long p_amount) {
         return Throughput{p_amount, "byte"};
     }
     /*-------------------------------------------------------------------------------*/
@@ -72,7 +72,7 @@ class Throughput {
 class BenchmarkId {
     public:
     // Returns the id of a benchmark which is run without a parameter.
-    func static BenchmarkId plain(const char *p_name) { return BenchmarkId{p_name, ""}; }
+    static func BenchmarkId plain(const char *p_name) { return BenchmarkId{p_name, ""}; }
 
     // Returns the id of a benchmark which is run with the given parameter, e.g. 'u8/get/128'.
     static BenchmarkId from_parameter(const char *p_name, const unsigned long long p_value);
@@ -81,7 +81,7 @@ class BenchmarkId {
     /*-------------------------------------------------------------------------------*/
 
     // Returns the full id: the name on its own, and the name and its parameter together.
-    std::string full() const {
+    func std::string full() const {
         return parameter.empty() ? name : name + "/" + parameter;
     }
 
@@ -166,7 +166,7 @@ class Benchmarker {
 
         // Returns the shorter configuration '--quick' asks for: ten samples are enough to
         // tell a real change from noise on a quiet machine, at a fraction of the time.
-        func static Config quick() {
+        static func Config quick() {
             Config shortened;
             shortened.warm_up_time = 0.1;
             shortened.measurement_time = 0.2;
@@ -337,18 +337,18 @@ class Benchmarker {
     // keeps the work of a sample from being pulled across the edges of its own timing.
     // NOTE: Not 'func' - inline assembly is a runtime-only operation.
     static void clobber_memory() {
-#if defined(GNUC_ENABLED) || defined(CLANG_ENABLED)
+        #if defined(GNUC_ENABLED) || defined(CLANG_ENABLED)
         asm volatile("" : : : "memory");
-#else
+        #else
         std::atomic_signal_fence(std::memory_order_seq_cst);
-#endif
+        #endif
     }
 
     // ── Filtering ───────────────────────────────────────────────────────────────────────────
 
     // Returns whether the given id matches the given filter (a case sensitive substring, the
     // rule the tester uses as well; a regular expression would be a dependency).
-    static bool matches(const std::string &p_id, const std::string &p_filter) {
+    static func bool matches(const std::string &p_id, const std::string &p_filter) {
         return p_filter.empty() || p_id.find(p_filter) != std::string::npos;
     }
 
@@ -412,23 +412,23 @@ class Benchmarker {
     explicit Benchmarker(const Config &p_config) : config(p_config) {}
 
     // Deleted copy constructor: a run owns its own measurements and its own output.
-    Benchmarker(const Benchmarker &) = delete;
+    func Benchmarker(const Benchmarker &) = delete;
     // Deleted copy assignment: a run owns its own measurements and its own output.
-    Benchmarker &operator=(const Benchmarker &) = delete;
+    func Benchmarker &operator=(const Benchmarker &) = delete;
     /*-------------------------------------------------------------------------------*/
 
     // Returns the configuration every benchmark of this run is measured with. Changing it
     // between two benchmarks is how a group is tuned without touching the command line.
-    Config &settings() { return config; }
+    func Config &settings() { return config; }
     // Returns the configuration of this run.
-    const Config &settings() const { return config; }
+    func const Config &settings() const { return config; }
     /*-------------------------------------------------------------------------------*/
 
     // Registers a benchmark and measures it right away. The routine is handed a 'Bencher',
     // which owns the amount of iterations a sample performs and spends them with one of its
     // own methods.
     template <typename F>
-    void bench_function(const char *p_name, F &&p_routine) {
+    func void bench_function(const char *p_name, F &&p_routine) {
         bench_entry(BenchmarkId::plain(p_name), std::forward<F>(p_routine), config);
     }
 
@@ -486,7 +486,7 @@ class Benchmarker {
         static_assert(std::is_trivially_copyable_v<T>,
                       "black_box hands the value to the compiler through a register or a cell of "
                       "memory, which is only defined for trivially copyable types");
-#if defined(GNUC_ENABLED) || defined(CLANG_ENABLED)
+        #if defined(GNUC_ENABLED) || defined(CLANG_ENABLED)
         // An empty assembly statement with the value as both its input and its output: the
         // compiler has to materialize the value, and it cannot know where it came from.
         //
@@ -495,13 +495,13 @@ class Benchmarker {
         // deletes the statement, and the work it was written to protect goes with it.
         asm volatile("" : "+rm"(p_value) : :);
         return p_value;
-#else
+        #else
         // MSVC has no inline assembly to ask, so the value takes the round trip through a
         // volatile cell instead. It is not free, which is the one thing a RatLab measurement
         // cannot be compared across compilers on.
         do_not_optimize(p_value);
         return p_value;
-#endif
+        #endif
     }
 
     // Keeps the given value alive by writing it into a volatile cell and reading it back.
@@ -547,10 +547,10 @@ class Benchmarker {
     // ── Results ────────────────────────────────────────────────────────────────────────────
 
     // Returns the amount of benchmarks which have been measured.
-    std::size_t result_count() const { return results.size(); }
+    func std::size_t result_count() const { return results.size(); }
 
     // Returns the result of the benchmark with the given id, or nullptr when there is none.
-    const BenchResult *find_result(const std::string &p_id) const {
+    func const BenchResult *find_result(const std::string &p_id) const {
         for (const BenchResult &result : results) {
             if (result.id == p_id) {
                 return &result;
@@ -701,7 +701,7 @@ class Benchmarker {
     // of the measurement time one sample is allowed to take. That is what makes 'sample_size'
     // samples take 'measurement_time' as a whole, whatever an iteration turns out to cost.
     // NOTE: Not 'func' - the amount is derived from a measurement.
-    static unsigned long long plan_sample(const Config &p_config,
+    static func unsigned long long plan_sample(const Config &p_config,
                                           const unsigned long long p_calibrated,
                                           const double p_batch_ns);
 
@@ -725,7 +725,7 @@ class Benchmarker {
     // Returns whether the given result is a cost worth quoting: a benchmark which spent no
     // iterations measured nothing, and one whose batches are shorter than the calibration is
     // willing to time is below what the clock can resolve. Both are still reported.
-    static bool resolvable(const BenchResult &p_result);
+    static func bool resolvable(const BenchResult &p_result);
 
     // ── Reporting ──────────────────────────────────────────────────────────────────────────
 
@@ -841,7 +841,7 @@ class Bencher {
     // before the routine is called, and it is the same for every sample of a benchmark unless
     // the body decided it: a batched body counts the calls it made, and 'iter_custom' reports
     // what it spent.
-    unsigned long long iterations() const {
+    func unsigned long long iterations() const {
         return performed_iterations > 0ull ? performed_iterations : iteration_count;
     }
     /*-------------------------------------------------------------------------------*/
@@ -854,7 +854,7 @@ class Bencher {
     // Returns whether the benchmark drove its own iteration count. It is the mark of a
     // benchmark which cannot be split into identical iterations, and it is what the report
     // says the amount below means.
-    bool drove_its_own_count() const { return drove_count; }
+    func bool drove_its_own_count() const { return drove_count; }
     /*-------------------------------------------------------------------------------*/
 
     // Runs the given routine once per iteration and keeps every result alive.
@@ -976,14 +976,14 @@ class Bencher {
 
     // Constructor, which only the runner uses.
     // NOTE: Not 'func' - a bencher is built for every single batch.
-    Bencher(const unsigned long long p_iterations, const double p_expected_ns)
+    func Bencher(const unsigned long long p_iterations, const double p_expected_ns)
         : iteration_count(p_iterations), expected_time_ns(p_expected_ns) {}
 
     // Returns the amount of calls a batched body spent on its routine, which is the square of
     // the amount it was given whenever the input is set up once per batch rather than once per
     // call. It saturates rather than wrapping: a count which came out of an overflow would be
     // a number the report could not be believed on.
-    unsigned long long per_input_calls() const {
+    func unsigned long long per_input_calls() const {
         const unsigned long long limit = 0xFFFFFFFFull;
         if (iteration_count <= 1ull || iteration_count > limit) {
             return iteration_count;
@@ -1115,7 +1115,7 @@ inline unsigned long long Benchmarker::calibrate(const BenchEntry &p_entry,
     return iterations;
 }
 
-inline unsigned long long Benchmarker::plan_sample(const Config &p_config,
+inline func unsigned long long Benchmarker::plan_sample(const Config &p_config,
                                                    const unsigned long long p_calibrated,
                                                    const double p_batch_ns) {
     if (p_batch_ns <= 0.0 || p_config.sample_size == 0ull) {
@@ -1132,7 +1132,7 @@ inline unsigned long long Benchmarker::plan_sample(const Config &p_config,
                : static_cast<unsigned long long>(planned);
 }
 
-inline bool Benchmarker::resolvable(const BenchResult &p_result) {
+inline func bool Benchmarker::resolvable(const BenchResult &p_result) {
     // A benchmark which spent no iterations measured nothing, and one whose batches are shorter
     // than the calibration is willing to time is below what the clock can resolve. Both are
     // reported, and neither is put forward as the cost of a benchmark.
@@ -1859,13 +1859,13 @@ class BenchmarkGroup {
 
     // Sets what a single iteration of this group produces, which is the unit its throughput is
     // reported in.
-    void throughput(const Throughput &p_throughput) { config.throughput = p_throughput; }
+    func void throughput(const Throughput &p_throughput) { config.throughput = p_throughput; }
     // Sets how long the samples of this group are collected, in seconds.
-    void measurement_time(const double p_seconds) { config.measurement_time = p_seconds; }
+    func void measurement_time(const double p_seconds) { config.measurement_time = p_seconds; }
     // Sets how long the benchmarks of this group are warmed up, in seconds.
-    void warm_up_time(const double p_seconds) { config.warm_up_time = p_seconds; }
+    func void warm_up_time(const double p_seconds) { config.warm_up_time = p_seconds; }
     // Sets how many samples the benchmarks of this group are measured with.
-    void sample_size(const unsigned long long p_samples) { config.sample_size = p_samples; }
+    func void sample_size(const unsigned long long p_samples) { config.sample_size = p_samples; }
 
     // Ends the group. There is nothing to end: the report belongs to the run as a whole, and
     // every benchmark of this group is in it by the time this is called.
@@ -1876,12 +1876,12 @@ class BenchmarkGroup {
     friend class Benchmarker;
 
     // Constructor, which only the runner and another group use.
-    BenchmarkGroup(Benchmarker &p_benchmarker, const std::string &p_prefix,
+    func BenchmarkGroup(Benchmarker &p_benchmarker, const std::string &p_prefix,
                     const Benchmarker::Config &p_config)
         : p_benchmarker(&p_benchmarker), prefix(p_prefix), config(p_config) {}
 
     // Returns the full name of a benchmark of this group.
-    std::string name(const char *p_name) const {
+    func std::string name(const char *p_name) const {
         return prefix.empty() ? std::string(p_name) : prefix + "/" + p_name;
     }
 
