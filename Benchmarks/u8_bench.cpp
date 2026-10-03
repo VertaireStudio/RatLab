@@ -166,21 +166,6 @@ void bench_u8(Benchmarker &p_benchmarker) {
         });
     });
 
-    // Measures the guard against a division by zero, taken on every division.
-    group.bench_function("arithmetic/div_by_zero", [](Bencher &p_bencher) {
-        unsigned char counter = 1;
-        p_bencher.iter([&] {
-            counter = (unsigned char)(counter + 1u);
-            // The divisor has to be opaque. Left as a literal the compiler proves at compile
-            // time that it is zero, folds the guard away and hands back the maximum value
-            // without ever dividing, which is the opposite of what this body is measuring.
-            const u8 dividend = Benchmarker::black_box<u8>(counter);
-            const u8 zero = Benchmarker::black_box<u8>((unsigned char)0);
-            const u8 divided = Benchmarker::black_box<u8>(dividend / zero);
-            return divided;
-        });
-    });
-
     // Measures the increment operator, which reads, writes and re-checks the access.
     //
     // NOTE: The pair '++value; --value;' is not measured, because it is the identity for every
