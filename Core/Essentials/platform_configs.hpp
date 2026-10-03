@@ -15,6 +15,7 @@ enum PLATFORMS {
     LINUX,
     MACOS,
     IOS,
+    ANDROID,
     WEB,
 };
 
