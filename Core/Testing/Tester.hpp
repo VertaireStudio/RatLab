@@ -68,7 +68,7 @@ class Tester {
     // The shared registry of every test case known to the workspace.
     // A function-local static is used so that registration is safe to perform from any
     // translation unit, no matter in which order the static-initializers happen to run.
-    static std::vector<TestCase> &registry() {
+    static func std::vector<TestCase> &registry() {
         static std::vector<TestCase> cases;
         return cases;
     }
@@ -159,7 +159,7 @@ class Tester {
 
     // Counts a passing check.
     // NOTE: Not 'func' - the counters belong to a running test case.
-    void count_pass() {
+    func void count_pass() {
         check_total += 1;
         case_check_total += 1;
         pass_count += 1;
@@ -216,7 +216,7 @@ class Tester {
     // ── Reporting ───────────────────────────────────────────────────────────────────────────
 
     // Returns the current value of the monotonic clock, in nanoseconds.
-    static double now_ns() {
+    static func double now_ns() {
         return static_cast<double>(
             std::chrono::duration_cast<std::chrono::nanoseconds>(
                 std::chrono::steady_clock::now().time_since_epoch()).count());
@@ -224,7 +224,7 @@ class Tester {
 
     // Returns whether the given name matches the given filter (case sensitive substring match).
     // An empty filter matches everything.
-    static bool matches(const char *p_name, const std::string &p_filter) {
+    static func bool matches(const char *p_name, const std::string &p_filter) {
         return p_filter.empty() || std::string(p_name).find(p_filter) != std::string::npos;
     }
 
@@ -409,9 +409,9 @@ class Tester {
     Tester() = default;
 
     // Deleted copy constructor: a test run owns its own counters.
-    Tester(const Tester &) = delete;
+    func Tester(const Tester &) = delete;
     // Deleted copy assignment: a test run owns its own counters.
-    Tester &operator=(const Tester &) = delete;
+    func Tester &operator=(const Tester &) = delete;
     /*-------------------------------------------------------------------------------*/
 
     // ── Comparisons ─────────────────────────────────────────────────────────────────────────
@@ -486,7 +486,7 @@ class Tester {
 
     // Registers a test case to be executed by 'run'.
     // Safe to call from any translation unit at any time before (or during) a run.
-    static void register_test(const char *p_name, TestBody p_body) {
+    static func void register_test(const char *p_name, TestBody p_body) {
         registry().push_back(TestCase{p_name, p_body});
     }
 
@@ -495,14 +495,14 @@ class Tester {
     //     static const Tester::AutoTest registration("name", &body);
     class AutoTest {
         public:
-        AutoTest(const char *p_name, TestBody p_body) { register_test(p_name, p_body); }
+        func AutoTest(const char *p_name, TestBody p_body) { register_test(p_name, p_body); }
     };
 
     // Returns the number of registered test cases.
-    static std::size_t test_count() { return registry().size(); }
+    static func std::size_t test_count() { return registry().size(); }
 
     // Returns whether at least one test case has been registered.
-    static bool has_tests() { return !registry().empty(); }
+    static func bool has_tests() { return !registry().empty(); }
     /*-------------------------------------------------------------------------------*/
 
     // ── Execution ───────────────────────────────────────────────────────────────────────────
@@ -597,16 +597,16 @@ class Tester {
     }
 
     // Returns whether every executed check passed and at least one check was performed.
-    bool all_passed() const { return fail_count == 0 && check_total > 0; }
+    func bool all_passed() const { return fail_count == 0 && check_total > 0; }
 
     // Returns whether the test case which is currently being executed has a failing check.
-    bool case_passed() const { return case_fail_count == 0; }
+    func bool case_passed() const { return case_fail_count == 0; }
 
     // Returns the number of failing checks of the whole run.
-    unsigned long long failures() const { return fail_count; }
+    func unsigned long long failures() const { return fail_count; }
 
     // Returns the number of checks which were performed so far.
-    unsigned long long checks() const { return check_total; }
+    func unsigned long long checks() const { return check_total; }
 
     // Prints the usage text of the test runner.
     static void print_usage(const char *p_program) {

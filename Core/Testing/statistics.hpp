@@ -70,7 +70,7 @@ class Statistics {
     // ── Estimates ───────────────────────────────────────────────────────────────────────────
 
     // Returns the average of the given samples. An empty set averages zero.
-    func static double mean(const std::vector<double> &p_data) {
+    static func double mean(const std::vector<double> &p_data) {
         if (p_data.empty()) {
             return 0.0;
         }
@@ -84,7 +84,7 @@ class Statistics {
     // Returns how far the given samples are spread around their average, corrected for the
     // sample size ('Bessel's correction'), so that a spread is never read off a single
     // sample. Less than two samples have none.
-    func static double deviation(const std::vector<double> &p_data) {
+    static func double deviation(const std::vector<double> &p_data) {
         if (p_data.size() < 2) {
             return 0.0;
         }
@@ -99,7 +99,7 @@ class Statistics {
 
     // Returns the middle of the given samples, which is the value half of them are below.
     // An empty set has none.
-    static double median(const std::vector<double> &p_data) {
+    static func double median(const std::vector<double> &p_data) {
         if (p_data.empty()) {
             return 0.0;
         }
@@ -115,7 +115,7 @@ class Statistics {
     // Returns the median of how far the given samples are from their median. It says the
     // same about the spread as 'deviation' does, but a single wild sample cannot move it,
     // which is exactly what an interval around a benchmark needs.
-    static double absolute_deviation(const std::vector<double> &p_data) {
+    static func double absolute_deviation(const std::vector<double> &p_data) {
         if (p_data.empty()) {
             return 0.0;
         }
@@ -165,7 +165,7 @@ class Statistics {
     // relative distance, which is what keeps a benchmark whose samples are quantized by the
     // clock from reporting every sample which happens to land one step above the middle as an
     // outlier of a distribution which has no outliers at all.
-    static std::vector<std::size_t> outliers(const std::vector<double> &p_data) {
+    static func std::vector<std::size_t> outliers(const std::vector<double> &p_data) {
         std::vector<std::size_t> result;
         if (p_data.size() < MINIMUM_SAMPLES) {
             return result;
@@ -190,7 +190,7 @@ class Statistics {
 
     // Returns the index of the sample which sits the furthest away from the middle, which
     // is the one worth looking at first when a benchmark misbehaves.
-    static std::size_t worst_sample(const std::vector<double> &p_data) {
+    static func std::size_t worst_sample(const std::vector<double> &p_data) {
         if (p_data.empty()) {
             return 0;
         }
@@ -308,7 +308,7 @@ class Statistics {
         // resampled along the same draws, which would compare identical noise to identical
         // noise and find no change at all.
         // NOTE: Not 'func' - the state is carried from one draw to the next.
-        Generator(const std::size_t p_size, const unsigned long long p_salt) {
+        func Generator(const std::size_t p_size, const unsigned long long p_salt) {
             state = 0x9E3779B97F4A7C15ull ^
                     (static_cast<unsigned long long>(p_size) * 0xBF58476D1CE4E5B9ull) ^
                     (p_salt * 0x94D049BB133111EBull) ^
@@ -321,7 +321,7 @@ class Statistics {
 
         // Returns the next value of the sequence.
         // NOTE: Not 'func' - the state is carried from one draw to the next.
-        unsigned long long next() {
+        func unsigned long long next() {
             state ^= state << 13;
             state ^= state >> 7;
             state ^= state << 17;
@@ -330,7 +330,7 @@ class Statistics {
 
         // Returns a value below the given bound.
         // NOTE: Not 'func' - the state is carried from one draw to the next.
-        unsigned long long below(const unsigned long long p_bound) {
+        func unsigned long long below(const unsigned long long p_bound) {
             return p_bound > 0 ? next() % p_bound : 0ull;
         }
         /*-------------------------------------------------------------------------------*/
@@ -344,7 +344,7 @@ class Statistics {
     // Returns the value at the given fraction of the sorted samples, 0 being the smallest
     // and 1 the largest. A fraction which lands between two samples is interpolated, so the
     // bounds move smoothly with the confidence level instead of jumping by a whole sample.
-    static double percentile(const std::vector<double> &p_sorted, const double p_fraction) {
+    static func double percentile(const std::vector<double> &p_sorted, const double p_fraction) {
         if (p_sorted.empty()) {
             return 0.0;
         }
@@ -361,7 +361,7 @@ class Statistics {
 
     // Returns one resample of the given data: as many values as asked for, drawn from the
     // data itself with replacement.
-    static std::vector<double> draw(const std::vector<double> &p_data, const std::size_t p_amount,
+    static func std::vector<double> draw(const std::vector<double> &p_data, const std::size_t p_amount,
                                     Generator &r_generator) {
         std::vector<double> resampled;
         resampled.reserve(p_amount);
@@ -372,7 +372,7 @@ class Statistics {
     }
 
     // Returns the indexes of one resample of as many samples of a set of the given size.
-    static std::vector<std::size_t> draw(const std::size_t p_data_size, Generator &r_generator) {
+    static func std::vector<std::size_t> draw(const std::size_t p_data_size, Generator &r_generator) {
         std::vector<std::size_t> indexes;
         indexes.reserve(p_data_size);
         for (std::size_t index = 0; index < p_data_size; ++index) {
@@ -384,7 +384,7 @@ class Statistics {
     // Returns the average of as many resamples of the given data, which is the bootstrapped
     // distribution every change is then read off.
     // NOTE: Not 'func' - every resample is drawn and evaluated.
-    static std::vector<double> resample_estimates(const std::vector<double> &p_data,
+    static func std::vector<double> resample_estimates(const std::vector<double> &p_data,
                                                   const unsigned long long p_nresamples,
                                                   const unsigned long long p_salt) {
         Generator generator(p_data.size(), p_salt);
