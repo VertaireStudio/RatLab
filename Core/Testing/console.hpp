@@ -15,7 +15,7 @@
 #include <cstring>
 #include <ctime>
 
-#if defined(_WIN32)
+#if WINDOWS_ENABLED
     #include <direct.h>
     #include <io.h>
     #define RATLAB_ISATTY(stream) (_isatty(_fileno(stream)) != 0)
@@ -42,7 +42,7 @@ class Console {
 
     // Constructor.
     // NOTE: Not 'func' - terminal detection is a runtime-only query.
-    Console() {
+    func Console() {
         interactive = RATLAB_ISATTY(stdout);
         color = interactive;
     }
@@ -50,13 +50,13 @@ class Console {
 
     // ── Colors ──────────────────────────────────────────────────────────────────────────────
 
-    func static const char *bold() { return "\x1b[1m"; }
-    func static const char *dim() { return "\x1b[2m"; }
-    func static const char *red() { return "\x1b[31m"; }
-    func static const char *green() { return "\x1b[32m"; }
-    func static const char *yellow() { return "\x1b[33m"; }
-    func static const char *cyan() { return "\x1b[36m"; }
-    func static const char *reset() { return "\x1b[0m"; }
+    static func const char *bold() { return "\x1b[1m"; }
+    static func const char *dim() { return "\x1b[2m"; }
+    static func const char *red() { return "\x1b[31m"; }
+    static func const char *green() { return "\x1b[32m"; }
+    static func const char *yellow() { return "\x1b[33m"; }
+    static func const char *cyan() { return "\x1b[36m"; }
+    static func const char *reset() { return "\x1b[0m"; }
 
     // Returns the given escape sequence, or nothing at all when the output is not a terminal.
     func const char *paint(const char *p_code) const { return color ? p_code : ""; }
@@ -117,7 +117,7 @@ class Console {
 
     // Writes an unsigned integer with thousands separators, e.g. 87266902 becomes '87,266,902'.
     // NOTE: Not 'func' - 'snprintf' is a runtime-only operation.
-    static void format_count(char *r_buffer, const std::size_t p_size,
+    static func void format_count(char *r_buffer, const std::size_t p_size,
                              const unsigned long long p_value) {
         // The digits are collected starting at the least significant one.
         char digits[24];
@@ -150,21 +150,21 @@ class Console {
     // name of that unit. Both are decided by the magnitude of the value itself, so that a
     // report stays readable whichever one of the four it happens to land on.
     // NOTE: Not 'func' - the magnitudes are compared at runtime.
-    func static double duration_scale(const double p_ns) {
+    static func double duration_scale(const double p_ns) {
         return p_ns < 1000.0 ? 1.0 : p_ns < 1000000.0 ? 1000.0 : p_ns < 1000000000.0 ? 1000000.0 :
                                1000000000.0;
     }
 
     // Returns the name of the unit a duration of the given size is reported in.
     // NOTE: Not 'func' - the magnitudes are compared at runtime.
-    func static const char *duration_unit(const double p_ns) {
+    static func const char *duration_unit(const double p_ns) {
         return p_ns < 1000.0 ? "ns" : p_ns < 1000000.0 ? "us" :
                p_ns < 1000000000.0 ? "ms" : "s";
     }
 
     // Returns the divisor which brings an amount per second into the unit it is reported in.
     // NOTE: Not 'func' - the magnitudes are compared at runtime.
-    func static double rate_scale(const double p_rate) {
+    static func double rate_scale(const double p_rate) {
         return p_rate < 1000.0 ? 1.0 : p_rate < 1000000.0 ? 1000.0 :
                p_rate < 1000000000.0 ? 1000000.0 : p_rate < 1000000000000.0 ? 1000000000.0 :
                                                                              1000000000000.0;
@@ -172,7 +172,7 @@ class Console {
 
     // Returns the magnitude prefix of the unit an amount per second is reported in.
     // NOTE: Not 'func' - the magnitudes are compared at runtime.
-    func static char rate_prefix(const double p_rate) {
+    static func char rate_prefix(const double p_rate) {
         return p_rate < 1000.0 ? ' ' : p_rate < 1000000.0 ? 'K' : p_rate < 1000000000.0 ? 'M' :
                p_rate < 1000000000000.0 ? 'G' : 'T';
     }
@@ -300,11 +300,11 @@ class Console {
         const std::time_t now = std::time(nullptr);
         // 'localtime' returns a pointer to shared storage, so the result is copied out of it.
         std::tm parts = {};
-#if defined(_WIN32)
+        #if WINDOWS_ENABLED
         localtime_s(&parts, &now);
-#else
+        #else
         localtime_r(&now, &parts);
-#endif
+        #endif
         if (std::strftime(r_buffer, p_size, "%Y-%m-%d %H:%M:%S", &parts) == 0) {
             std::snprintf(r_buffer, p_size, "unknown");
         }
@@ -319,11 +319,11 @@ class Console {
     // Returns whether the directory is available afterwards.
     // NOTE: Not 'func' - creating a directory is a runtime-only operation.
     static bool ensure_directory(const char *p_path) {
-#if defined(_WIN32)
+        #if WINDOWS_ENABLED
         const int status = _mkdir(p_path);
-#else
+        #else
         const int status = ::mkdir(p_path, 0755);
-#endif
+        #endif
         if (status == 0) {
             return true;
         }
@@ -336,46 +336,40 @@ class Console {
     // ── Environment ────────────────────────────────────────────────────────────────────────
 
     // Returns the name of the platform the workspace is being compiled for.
-    func static const char *platform_name() {
-#if defined(LINUX_ENABLED)
-        return "Linux";
-#elif defined(WINDOWS_ENABLED)
-        return "Windows";
-#elif defined(MACOS_ENABLED)
-        return "macOS";
-#elif defined(IOS_ENABLED)
-        return "iOS";
-#elif defined(ANDROID_ENABLED)
-        return "Android";
-#elif defined(WEB_ENABLED)
-        return "Web";
-#else
-        return "Unknown";
-#endif
+    static func const char *platform_name() {
+        switch (CURRENT_PLATFORM) {
+            case PLATFORMS::LINUX: return "Linux";
+            case PLATFORMS::WINDOWS: return "Windows";
+            case PLATFORMS::MACOS: return "MacOS";
+            case PLATFORMS::IOS: return "iOS";
+            case PLATFORMS::ANDROID: return "Android";
+            case PLATFORMS::WEB: return "Web";
+            default: return "Unknown";
+        }
     }
 
     // Returns the name and version of the compiler in use.
-    func static const char *compiler_name() {
-#if defined(CLANG_ENABLED)
+    static func const char *compiler_name() {
+        #if defined(CLANG_ENABLED)
         return "Clang " RATLAB_STRINGIFY(__clang_major__) "." RATLAB_STRINGIFY(__clang_minor__);
-#elif defined(GNUC_ENABLED)
+        #elif defined(GNUC_ENABLED)
         return "GCC " RATLAB_STRINGIFY(__GNUC__) "." RATLAB_STRINGIFY(__GNUC_MINOR__);
-#elif defined(MSVC_ENABLED)
+        #elif defined(MSVC_ENABLED)
         return "MSVC " RATLAB_STRINGIFY(_MSC_VER);
-#else
+        #else
         return "Unknown";
-#endif
+        #endif
     }
 
     // Returns the C++ standard the workspace is being compiled for, as it is reported by the
     // compiler. NOTE: this is '__cplusplus' mapped onto the enum of the engine, which has to be
     // read through 'to_name' to be printable.
-    func static const char *cpp_standard_name() {
+    static func const char *cpp_standard_name() {
         return to_name(CURRENT_CPP_VERSION);
     }
 
     // Returns the name of a C++ version of the engine, as used in the report headers.
-    func static const char *to_name(const CPP_VERSIONS p_version) {
+    static func const char *to_name(const CPP_VERSIONS p_version) {
         switch (p_version) {
             case CPP_VERSIONS::CPP_17: return "C++17";
             case CPP_VERSIONS::CPP_20: return "C++20";
