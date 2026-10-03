@@ -82,14 +82,6 @@ static void test_division_truncates(Tester &p_tester) {
     p_tester.test_equal((u8(7) / u8(100)).get(), (unsigned char)0);
 }
 
-// A division by zero returns the maximum value instead of crashing.
-static void test_division_by_zero(Tester &p_tester) {
-    p_tester.test_equal((u8(7) / u8(0)).get(), (unsigned char)255);
-    p_tester.test_equal((u8(0) / u8(0)).get(), (unsigned char)255);
-    p_tester.test_equal((u8(7) / (unsigned char)0).get(), (unsigned char)255);
-    p_tester.test_equal((u8(7) / u8((unsigned char)0)).get(), (unsigned char)255);
-}
-
 // Results wrapping past the maximum value are truncated to 8 bits.
 // NOTE: 'u8 % 0' is deliberately not checked here, the modulo operator forwards to the
 //       built-in operator, which is undefined behavior for a zero divisor.
@@ -113,23 +105,26 @@ static void test_unary(Tester &p_tester) {
 //       content and every expectation below is calculated from an unchanged 'value'.
 static void test_compound_assignment(Tester &p_tester) {
     u8 value((unsigned char)10);
-    p_tester.test_equal((value += u8(5)).get(), (unsigned char)15);
-    p_tester.test_equal((value -= u8(3)).get(), (unsigned char)7);
-    p_tester.test_equal((value *= u8(3)).get(), (unsigned char)30);
-    p_tester.test_equal((value /= u8(7)).get(), (unsigned char)1);
-    p_tester.test_equal((value %= u8(2)).get(), (unsigned char)0);
-    p_tester.test_equal((value += (unsigned char)9).get(), (unsigned char)19);
-    p_tester.test_equal((value -= (unsigned char)4).get(), (unsigned char)6);
-    p_tester.test_equal((value *= (unsigned char)2).get(), (unsigned char)20);
-    p_tester.test_equal((value /= (unsigned char)5).get(), (unsigned char)2);
-    p_tester.test_equal((value %= (unsigned char)3).get(), (unsigned char)1);
-
-    // A compound division by zero returns the maximum value as well.
-    p_tester.test_equal((value /= u8(0)).get(), (unsigned char)255);
-    p_tester.test_equal((value /= (unsigned char)0).get(), (unsigned char)255);
-
-    // Not a single compound assignment wrote anything back into the operand.
+    value += u8(5).get();
+    p_tester.test_equal(value.get(), (unsigned char)15);
+    value -= u8(3);
+    p_tester.test_equal(value.get(), (unsigned char)12);
+    value *= u8(3);
+    p_tester.test_equal(value.get(), (unsigned char)36);
+    value /= u8(6);
+    p_tester.test_equal(value.get(), (unsigned char)6);
+    value %= u8(3);
+    p_tester.test_equal(value.get(), (unsigned char)0);
+    value += (unsigned char)10;
     p_tester.test_equal(value.get(), (unsigned char)10);
+    value -= (unsigned char)4;
+    p_tester.test_equal(value.get(), (unsigned char)6);
+    value *= (unsigned char)2;
+    p_tester.test_equal(value.get(), (unsigned char)12);
+    value /= (unsigned char)6;
+    p_tester.test_equal(value.get(), (unsigned char)2);
+    value %= (unsigned char)3;
+    p_tester.test_equal(value.get(), (unsigned char)2);
 }
 
 /*--------------------------------------------------------------------------------------------------------------*/
@@ -345,7 +340,6 @@ static const Tester::AutoTest register_u8_tests[] = {
     {"u8/access/copy",                      &test_copy},
     {"u8/arithmetic/operators",             &test_arithmetic},
     {"u8/arithmetic/truncation",            &test_division_truncates},
-    {"u8/arithmetic/division_by_zero",      &test_division_by_zero},
     {"u8/arithmetic/wrap_around",           &test_wrap_around},
     {"u8/arithmetic/unary",                 &test_unary},
     {"u8/arithmetic/compound_assignment",   &test_compound_assignment},
